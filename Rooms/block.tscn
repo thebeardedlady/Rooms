@@ -8,5 +8,6 @@ script/script = ExtResource( 1 )
 RoomIndex = -1
 GridP = Vector2( 0, 0 )
 BoundingBox = Rect2( 0, 0, 0, 0 )
+ColorMod = Vector3( 1, 1, 1 )
 
 

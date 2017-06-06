@@ -26,6 +26,9 @@ func _ready():
 	blocks[0][0][0].pos = blocks[0][0][0].pos.snapped(bsize) + bsize*0.5
 	blocks[0][1][0].pos = blocks[0][1][0].pos.snapped(bsize) + bsize*0.5
 	
+	
+	
+	
 	set_process(true)
 
 
