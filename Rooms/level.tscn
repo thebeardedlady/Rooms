@@ -1,6 +1,14 @@
-[gd_scene load_steps=2 format=1]
+[gd_scene load_steps=6 format=1]
 
 [ext_resource path="res://level.gd" type="Script" id=1]
+[ext_resource path="res://deep_rumble.ogg" type="AudioStream" id=2]
+[ext_resource path="res://mouseclick1.smp" type="Sample" id=3]
+[ext_resource path="res://mouserelease1.smp" type="Sample" id=4]
+
+[sub_resource type="SampleLibrary" id=1]
+
+samples/mouseclick1 = { "db":0.0, "pitch":1.0, "sample":ExtResource( 3 ) }
+samples/mouserelease1 = { "db":0.0, "pitch":1.0, "sample":ExtResource( 4 ) }
 
 [node name="level" type="Node2D"]
 
@@ -34,6 +42,37 @@ drag_margin/top = 0.2
 drag_margin/right = 0.2
 drag_margin/bottom = 0.2
 
+[node name="bass" type="StreamPlayer" parent="."]
+
+stream/stream = ExtResource( 2 )
+stream/play = false
+stream/loop = true
+stream/volume_db = 0.0
+stream/autoplay = false
+stream/paused = false
+stream/loop_restart_time = 0.0
+stream/buffering_ms = 515
+
+[node name="sfx" type="SamplePlayer2D" parent="."]
+
+params/volume_db = 0.0
+params/pitch_scale = 1.0
+params/attenuation/min_distance = 1.0
+params/attenuation/max_distance = 2048.0
+params/attenuation/distance_exp = 1.0
+config/polyphony = 3
+config/samples = SubResource( 1 )
+config/pitch_random = 0.0
+
+[node name="Tween2" type="Tween" parent="."]
+
+playback/process_mode = 1
+playback/active = false
+playback/repeat = false
+playback/speed = 1.0
+
 [connection signal="tween_complete" from="Tween" to="." method="_on_Tween_tween_complete"]
+
+[connection signal="tween_complete" from="Tween2" to="." method="_on_Tween2_tween_complete"]
 
 

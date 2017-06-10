@@ -11,37 +11,50 @@ var PickUp = false
 var PickUpBlock = null
 var RoomSize = Vector2(800,800)
 var BlocksGridSize = Vector2(8,8)
+var FalseMove = false
 var DummyRoom = preload("res://room.tscn").instance()
 export var CurrentRoom = 1
 onready var tween = get_node("Tween")
+onready var tween2 = get_node("Tween2")
 
 
 
 func _ready():
 	RoomSize.x = get_viewport_rect().size.y
 	RoomSize.y = RoomSize.x
-	
+	var colors = ColorArray([Color(1,1,1),Color(0,0,1),Color(1,0,0),Color(1,1,0)])
 	var temp = 0
 	if(temp == 0):
 		CurrentRoom = 2
 		var room = load("res://room.tscn")
 		for i in range(16):
 			Rooms.append(room.instance())
-			Rooms[i].RoomColor = Color(0.2,0.5,0.3)
+			var color
+			var index = 0
+			if((i&8)>>3 == 1):
+				index += 2
+			if((i&4)>>2 == 1):
+				index += 1
+			color = colors[index]
+			if((i&2)>>1 == 1):
+				color.v *= 0.5
+			if((i&1)>>0 == 1):
+				color.h *= 0.5
+			Rooms[i].RoomColor = color
 			Rooms[i].Type = i
 			Rooms[i].Index = i
 			add_child(Rooms[i])
 			Rooms[i].hide()
 		
-		var string = "1,1,1/2,4,1/3,1,3/4,3,4/5,3,3/"
-		string += "6,3,1/7,2,1/8,4,4/9,1,4/10,4,2/"
-		string += "11,2,2/12,3,2/13,2,4/14,4,3/15,2,3"
+		var string = "1,2,2/2,5,2/3,2,4/4,4,5/5,4,4/"
+		string += "6,4,2/7,3,2/8,5,5/9,2,5/10,5,3/"
+		string += "11,3,3/12,4,3/13,3,5/14,5,4/15,3,4"
 		Rooms[7].InitBlocks(string)
-		string = "1,0,0/2,2,0/3,4,0/"
-		string += "4,1,1/5,3,1/6,5,1/"
-		string += "7,0,2/8,2,2/9,4,2/"
-		string += "10,1,3/11,3,3/12,5,3/"
-		string += "13,0,4/14,2,4/15,4,4"
+		string = "1,1,1/2,3,1/3,5,1/"
+		string += "4,2,2/5,4,2/6,6,2/"
+		string += "7,1,3/8,3,3/9,5,3/"
+		string += "10,2,4/11,4,4/12,6,4/"
+		string += "13,1,5/14,3,5/15,5,5"
 		Rooms[6].InitBlocks(string)
 		Rooms[CurrentRoom].show()
 		
@@ -50,152 +63,37 @@ func _ready():
 			for block in roomblocks:
 				block.set_process(true)
 	elif(temp == 1):
-		CurrentRoom = 0
+		CurrentRoom = 8
 		var room = load("res://room.tscn")
-		for i in range(5):
+		for i in range(16):
 			Rooms.append(room.instance())
-			Rooms[i].RoomColor = Color((sin(2.0*i+1.0)+1.0)*0.5,i/5.0,(cos(i)+1.0)*0.5)
-			Rooms[i].Type = 15
+			var color
+			var index = 0
+			if((i&8)>>3 == 1):
+				index += 2
+			if((i&4)>>2 == 1):
+				index += 1
+			color = colors[index]
+			if((i&2)>>1 == 1):
+				color.v *= 0.5
+			if((i&1)>>0 == 1):
+				color.h *= 0.5
+			Rooms[i].RoomColor = color
+			Rooms[i].Type = i
 			Rooms[i].Index = i
 			add_child(Rooms[i])
 			Rooms[i].hide()
-		
-		var string = "0,3,2/1,2,3/2,2,1/3,1,2/4,2,2"
-		Rooms[1].InitBlocks(string)
-		string = "0,2,3/1,2,1/2,1,2/3,2,2"
+		var string = "0,2,2/1,3,3/4,4,4/9,5,5"
 		Rooms[2].InitBlocks(string)
-		string = "0,2,1/1,1,2/2,2,2"
-		Rooms[3].InitBlocks(string)
-		string = "0,2,2/1,3,2"
-		Rooms[4].InitBlocks(string)
-		Rooms[CurrentRoom].show()
-		
-		Rooms[CurrentRoom].set_process(true)
-		for roomblocks in Rooms[CurrentRoom].BlocksArray:
-			for block in roomblocks:
-				block.set_process(true)
-	elif(temp == 2):
-		#NOTE(ian): This is pretty cool!!!!!!!
-		CurrentRoom = 0
-		var room = load("res://room.tscn")
-		var types = [14,13,11,7]
-		for i in range(4):
-			Rooms.append(room.instance())
-			Rooms[i].RoomColor = Color((sin(2.0*i+1.0)+1.0)*0.5,i/5.0,(cos(i)+1.0)*0.5)
-			Rooms[i].Type = types[i]
-			Rooms[i].Index = i
-			add_child(Rooms[i])
-			Rooms[i].hide()
-		
-		var string = "0,0,0/0,2,0/1,1,1/1,3,1/"
-		string += "2,0,2/2,2,2/3,1,3/3,3,3"
-		Rooms[0].InitBlocks(string)
-		Rooms[CurrentRoom].show()
-		
-		Rooms[CurrentRoom].set_process(true)
-		for roomblocks in Rooms[CurrentRoom].BlocksArray:
-			for block in roomblocks:
-				block.set_process(true)
-	elif(temp == 3):
-		CurrentRoom = 1
-		var room = load("res://room.tscn")
-		var types = []
-		for i in range(32):
-			Rooms.append(room.instance())
-			if(i < 16):
-				Rooms[i].RoomColor = Color(0.1,0.2,0.4)
-			else:
-				Rooms[i].RoomColor = Color(0.4,0.1,0.2)
-			Rooms[i].Type = i%16
-			Rooms[i].Index = i
-			add_child(Rooms[i])
-			Rooms[i].hide()
-		
-		var string = "1,0,0/2,2,0/3,4,0/4,1,1/5,3,1/6,5,1/"
-		string += "7,0,2/8,2,2/9,4,2/10,1,3/11,3,3/12,5,3/"
-		string += "13,0,4/14,2,4/15,4,4/19,3,5"
-		Rooms[1].InitBlocks(string)
-		string = "1,0,0/2,2,0/3,4,0/4,1,1/5,3,1/6,5,1/"
-		string += "7,0,2/8,2,2/9,4,2/10,1,3/11,3,3/12,5,3/"
-		string += "13,0,4/14,2,4/15,4,4"
+		string = "6,3,2"
 		Rooms[5].InitBlocks(string)
-		string = "17,0,0/18,2,0/19,4,0/20,1,1/21,3,1/22,5,1/"
-		string += "23,0,2/24,2,2/25,4,2/26,1,3/27,3,3/28,5,3/"
-		string += "29,0,4/30,2,4/31,4,4"
-		Rooms[19].InitBlocks(string)
-		string = "17,0,0/18,2,0/19,4,0/20,1,1/21,3,1/22,5,1/"
-		string += "23,0,2/24,2,2/25,4,2/26,1,3/27,3,3/28,5,3/"
-		string += "29,0,4/30,2,4/31,4,4"
-		Rooms[30].InitBlocks(string)
+		string = "7,2,1/7,5,6/11,1,2/11,6,5/13,2,3/13,5,4/14,3,2/14,4,5/15,2,2/15,5,5"
+		Rooms[1].InitBlocks(string)
+		string = "2,5,2/3,2,4/5,3,4/8,2,5/10,4,3/12,4,4"
+		Rooms[10].InitBlocks(string)
+		string = "0,1,1/1,3,1/2,5,1/3,2,2/4,4,2/5,6,2/6,1,3/8,3,3/9,5,3/10,2,4/12,4,4"
+		Rooms[6].InitBlocks(string)
 		Rooms[CurrentRoom].show()
-		
-		Rooms[CurrentRoom].set_process(true)
-		for roomblocks in Rooms[CurrentRoom].BlocksArray:
-			for block in roomblocks:
-				block.set_process(true)
-	elif(temp == 4):
-		CurrentRoom = 4
-		var room = load("res://room.tscn")
-		var types = [7,11,13,14,15]
-		for i in range(types.size()):
-			Rooms.append(room.instance())
-			Rooms[i].RoomColor = Color((cos(i)+1.0)*0.5,i/convert(types.size(),TYPE_REAL),0.2)
-			Rooms[i].Type = types[i]
-			Rooms[i].Index = i
-			add_child(Rooms[i])
-			Rooms[i].hide()
-		
-		var string = "0,0,0/0,2,0/1,1,1/1,3,1/2,0,2/2,2,2/"
-		string += "3,1,3/3,3,3/4,0,4/4,2,4"
-		Rooms[4].InitBlocks(string)
-		
-		Rooms[CurrentRoom].show()
-		
-		Rooms[CurrentRoom].set_process(true)
-		for roomblocks in Rooms[CurrentRoom].BlocksArray:
-			for block in roomblocks:
-				block.set_process(true)
-	elif(temp == 5):
-		#NOTE(ian): This is pretty cool!!!!!!
-		CurrentRoom = 4
-		var room = load("res://room.tscn")
-		var types = [3,6,9,12,15]
-		for i in range(types.size()):
-			Rooms.append(room.instance())
-			Rooms[i].RoomColor = Color((cos(i)+1.0)*0.5,i/convert(types.size(),TYPE_REAL),0.2)
-			Rooms[i].Type = types[i]
-			Rooms[i].Index = i
-			add_child(Rooms[i])
-			Rooms[i].hide()
-		
-		var string = "0,0,0/0,2,0/1,1,1/1,3,1/2,0,2/2,2,2/"
-		string += "3,1,3/3,3,3/4,0,4/4,2,4"
-		Rooms[4].InitBlocks(string)
-		
-		Rooms[CurrentRoom].show()
-		
-		Rooms[CurrentRoom].set_process(true)
-		for roomblocks in Rooms[CurrentRoom].BlocksArray:
-			for block in roomblocks:
-				block.set_process(true)
-	elif(temp == 6):
-		CurrentRoom = 4
-		var room = load("res://room.tscn")
-		var types = [3,6,9,12,15,5,10]
-		for i in range(types.size()):
-			Rooms.append(room.instance())
-			Rooms[i].RoomColor = Color(1,1,1)
-			Rooms[i].Type = types[i]
-			Rooms[i].Index = i
-			add_child(Rooms[i])
-			Rooms[i].hide()
-		
-		var string = "0,0,0/0,2,0/1,1,1/1,3,1/2,0,2/2,2,2/"
-		string += "3,1,3/3,3,3/4,0,4/4,2,4/5,4,0/5,5,1/6,4,2/6,5,3"
-		Rooms[4].InitBlocks(string)
-		
-		Rooms[CurrentRoom].show()
-		
 		Rooms[CurrentRoom].set_process(true)
 		for roomblocks in Rooms[CurrentRoom].BlocksArray:
 			for block in roomblocks:
@@ -215,28 +113,34 @@ func CreateHSVColor(h,s,v):
 	
 	return color
 
-func ConnectRooms(h,roomindex):
+func ConnectBlocksOnEdge(h,roomindex):
 	if(h[roomindex] == null):
-		Rooms[roomindex].ComputeSingleBlock()
+		Rooms[roomindex].ComputeEdgeBlocks()
 		h[roomindex] = true
+		
 		
 		var type = Rooms[roomindex].Type
 		if((type&8)>>3 == 1):
 			if(Rooms[roomindex].NumConnections(Rooms[roomindex].North) == 1):
-				ConnectRooms(h,Rooms[roomindex].North[0][0])
+				ConnectBlocksOnEdge(h,Rooms[roomindex].North[0][0])
 		if((type&4)>>2 == 1):
 			if(Rooms[roomindex].NumConnections(Rooms[roomindex].West) == 1):
-				ConnectRooms(h,Rooms[roomindex].West[0][0])
+				ConnectBlocksOnEdge(h,Rooms[roomindex].West[0][0])
 		if((type&2)>>1 == 1):
 			if(Rooms[roomindex].NumConnections(Rooms[roomindex].South) == 1):
-				ConnectRooms(h,Rooms[roomindex].South[0][0])
+				ConnectBlocksOnEdge(h,Rooms[roomindex].South[0][0])
 		if((type&1)>>0 == 1):
 			if(Rooms[roomindex].NumConnections(Rooms[roomindex].East) == 1):
-				ConnectRooms(h,Rooms[roomindex].East[0][0])
+				ConnectBlocksOnEdge(h,Rooms[roomindex].East[0][0])
+
+func ConnectBlocksInBlocks(h,roomindex):
+	if(h[roomindex] == null):
+		Rooms[roomindex].ComputeEdgeBlocks()
+		h[roomindex] = true
 		
 		for roomblocks in Rooms[roomindex].BlocksArray:
 			for block in roomblocks:
-				ConnectRooms(h,block.RoomIndex)
+				ConnectBlocksInBlocks(h,block.RoomIndex)
 
 
 
@@ -260,14 +164,16 @@ func _process(delta):
 						else:
 							Rooms[CurrentRoom].BlocksArray[roomindex].remove(blockindex)
 			
-			Rooms[CurrentRoom].EraseConnections(PickUpBlock.RoomIndex,Rooms[CurrentRoom].Index)
+			Rooms[CurrentRoom].EraseConnections(PickUpBlock.RoomIndex,CurrentRoom)
 			Rooms[CurrentRoom].EraseConnections(PickUpBlock.RoomIndex,-CurrentRoom)
-			var h = []
-			h.resize(Rooms.size())
-			ConnectRooms(h,CurrentRoom)
-			for i in range(Rooms.size()):
-				if(h[i] == null):
-					ConnectRooms(h,i)
+			Rooms[CurrentRoom].ComputeMiddleBlocks()
+			for n in range(10):
+				var h = []
+				h.resize(Rooms.size())
+				ConnectBlocksOnEdge(h,CurrentRoom)
+				for i in range(Rooms.size()):
+					if(h[i] == null):
+						ConnectBlocksOnEdge(h,i)
 			
 			Rooms[CurrentRoom].remove_child(PickUpBlock)
 			add_child(PickUpBlock)
@@ -315,13 +221,17 @@ func _process(delta):
 				pos.y *= BlockSize.y
 				PickUpBlock.set_pos(pos)
 				BlocksGrid[PickUpBlock.GridP.x][PickUpBlock.GridP.y] = PickUpBlock
-				var h = []
-				h.resize(Rooms.size())
-				ConnectRooms(h,PickUpBlock.RoomIndex)
-				ConnectRooms(h,CurrentRoom)
-				for i in range(Rooms.size()):
-					if(h[i] == null):
-						ConnectRooms(h,i)
+				Rooms[CurrentRoom].ComputeMiddleBlocks()
+				for n in range(10):
+					var h = []
+					h.resize(Rooms.size())
+					ConnectBlocksOnEdge(h,CurrentRoom)
+					for i in range(Rooms.size()):
+						if(h[i] == null):
+							ConnectBlocksOnEdge(h,i)
+				
+				
+				
 				Rooms[CurrentRoom].add_child(PickUpBlock)
 			else:
 				var index = -1
@@ -343,13 +253,14 @@ func _process(delta):
 				PickUpBlock.BoundingBox.pos = pos
 				if(PickUpRoom != CurrentRoom):
 					PickUpBlock.set_process(false)
-				var h = []
-				h.resize(Rooms.size())
-				ConnectRooms(h,PickUpBlock.RoomIndex)
-				ConnectRooms(h,PickUpRoom)
-				for i in range(Rooms.size()):
-					if(h[i] == null):
-						ConnectRooms(h,i)
+				Rooms[PickUpRoom].ComputeMiddleBlocks()
+				for n in range(10):
+					var h = []
+					h.resize(Rooms.size())
+					ConnectBlocksOnEdge(h,CurrentRoom)
+					for i in range(Rooms.size()):
+						if(h[i] == null):
+							ConnectBlocksOnEdge(h,i)
 				Rooms[PickUpRoom].add_child(PickUpBlock)
 			PickUp = false
 			PickUpBlock = null
@@ -362,12 +273,15 @@ func _input(event):
 		
 		if(event.scancode == KEY_ESCAPE):
 			get_tree().quit()
+		
+		
 		var type = Rooms[CurrentRoom].Type
-		if(((type&8)>>3) == 1):
-			if(Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].North) == 1):
-				var room = Rooms[CurrentRoom]
-				if(room.NumConnections(Rooms[room.North[0][0]].South) == 1):
-					if(event.scancode == KEY_UP or event.scancode == KEY_W):
+		if(event.scancode == KEY_UP or event.scancode == KEY_W):
+			if(((type&8)>>3) == 1):
+				var connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].North)
+				if(connections == 1):
+					var room = Rooms[CurrentRoom]
+					if(room.NumConnections(Rooms[room.North[0][0]].South) == 1):
 						Rooms[CurrentRoom].set_process(false)
 						if(CurrentRoom != Rooms[CurrentRoom].North[0][0]):
 							tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(0,RoomSize.y),0.5,1,2)
@@ -383,12 +297,19 @@ func _input(event):
 						MovedNorth = true
 						set_process_input(false)
 						tween.start()
+				elif(connections == 0):
+					tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(0,RoomSize.y*0.5),0.25,0,0)
+					set_process_input(false)
+					set_process(false)
+					FalseMove = true
+					tween.start()
 		
-		if(((type&4)>>2) == 1):
-			if(Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].West) == 1):
-				var room = Rooms[CurrentRoom]
-				if(room.NumConnections(Rooms[room.West[0][0]].East) == 1):
-					if(event.scancode == KEY_LEFT or event.scancode == KEY_A):
+		if(event.scancode == KEY_LEFT or event.scancode == KEY_A):
+			if(((type&4)>>2) == 1):
+				var connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].West)
+				if(connections == 1):
+					var room = Rooms[CurrentRoom]
+					if(room.NumConnections(Rooms[room.West[0][0]].East) == 1):
 						Rooms[CurrentRoom].set_process(false)
 						if(CurrentRoom != Rooms[CurrentRoom].West[0][0]):
 							tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(RoomSize.x,0),0.5,1,2)
@@ -404,12 +325,19 @@ func _input(event):
 						MovedWest = true
 						set_process_input(false)
 						tween.start()
+				elif(connections == 0):
+					tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(RoomSize.x*0.5,0),0.25,0,0)
+					set_process_input(false)
+					set_process(false)
+					FalseMove = true
+					tween.start()
 		
-		if(((type&2)>>1) == 1):
-			if(Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].South) == 1):
-				var room = Rooms[CurrentRoom]
-				if(room.NumConnections(Rooms[room.South[0][0]].North) == 1):
-					if(event.scancode == KEY_DOWN or event.scancode == KEY_S):
+		if(event.scancode == KEY_DOWN or event.scancode == KEY_S):
+			if(((type&2)>>1) == 1):
+				var connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].South)
+				if(connections == 1):
+					var room = Rooms[CurrentRoom]
+					if(room.NumConnections(Rooms[room.South[0][0]].North) == 1):
 						Rooms[CurrentRoom].set_process(false)
 						if(CurrentRoom != Rooms[CurrentRoom].South[0][0]):
 							tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(0,-RoomSize.y),0.5,1,2)
@@ -425,12 +353,19 @@ func _input(event):
 						MovedSouth = true
 						set_process_input(false)
 						tween.start()
+				elif(connections == 0):
+					tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(0,-RoomSize.y*0.5),0.25,0,0)
+					set_process_input(false)
+					set_process(false)
+					FalseMove = true
+					tween.start()
 		
-		if(((type&1)>>0) == 1):
-			if(Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].East) == 1):
-				var room = Rooms[CurrentRoom]
-				if(room.NumConnections(Rooms[room.East[0][0]].West) == 1):
-					if(event.scancode == KEY_RIGHT or event.scancode == KEY_D):
+		if(event.scancode == KEY_RIGHT or event.scancode == KEY_D):
+			if(((type&1)>>0) == 1):
+				var connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].East)
+				if(connections == 1):
+					var room = Rooms[CurrentRoom]
+					if(room.NumConnections(Rooms[room.East[0][0]].West) == 1):
 						Rooms[CurrentRoom].set_process(false)
 						if(CurrentRoom != Rooms[CurrentRoom].East[0][0]):
 							tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(-RoomSize.x,0),0.5,1,2)
@@ -446,6 +381,12 @@ func _input(event):
 						MovedEast = true
 						set_process_input(false)
 						tween.start()
+				elif(connections == 0):
+					tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(-RoomSize.x*0.5,0),0.25,0,0)
+					set_process_input(false)
+					set_process(false)
+					FalseMove = true
+					tween.start()
 
 
 
@@ -491,8 +432,6 @@ func CreateDummyRoom(room):
 func _on_Tween_tween_complete( object, key ):
 	
 	DummyRoom.hide()
-	
-	
 	if(MovedNorth):
 		tween.remove_all()
 		if(CurrentRoom != Rooms[CurrentRoom].South[0][0]):
@@ -550,3 +489,14 @@ func _on_Tween_tween_complete( object, key ):
 				block.set_process(true)
 		MovedEast = false
 		set_process_input(true)
+	
+	if(FalseMove):
+		tween2.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(0,0),0.25,0,1,0.25)
+		tween2.start()
+		FalseMove = false
+
+
+func _on_Tween2_tween_complete( object, key ):
+	tween2.remove_all()
+	set_process_input(true)
+	set_process(true)

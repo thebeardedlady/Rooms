@@ -169,7 +169,7 @@ func InitBlocks(string):
 	for text in blockstrings:
 		var split = text.split(",",false)
 		var roomindex = split[0].to_int()
-		var pos = Vector2(split[1].to_int(),split[2].to_int()) + Vector2(1,1)
+		var pos = Vector2(split[1].to_int(),split[2].to_int())
 		BlocksGrid[pos.x][pos.y] = load("res://block.tscn").instance()
 		BlocksGrid[pos.x][pos.y].RoomIndex = roomindex
 		BlocksGrid[pos.x][pos.y].Index = i
@@ -189,7 +189,7 @@ func InitBlocks(string):
 		add_child(BlocksGrid[pos.x][pos.y])
 		i += 1
 	
-	ComputeSingleBlock()
+	ComputeMiddleBlocks()
 
 
 
@@ -226,36 +226,74 @@ func EraseEast(blockindex,roomindex):
 			Rooms[blockindex].East.remove(i)
 
 
-func ComputeBlocks():
-	ComputeSingleBlock()
-	if(NumConnections(North) == 1):
-		Rooms[North[0][0]].ComputeSingleBlock()
-	if(NumConnections(West) == 1):
-		Rooms[West[0][0]].ComputeSingleBlock()
-	if(NumConnections(South) == 1):
-		Rooms[South[0][0]].ComputeSingleBlock()
-	if(NumConnections(East) == 1):
-		Rooms[East[0][0]].ComputeSingleBlock()
+func ComputeEdgeBlocks():
+	for roomblocks in BlocksArray:
+		var roomindex = roomblocks[0].RoomIndex
+		
+		var connectedNorth = (NumConnections(North)==1)
+		var connectedWest = (NumConnections(West)==1)
+		var connectedSouth = (NumConnections(South)==1)
+		var connectedEast = (NumConnections(East)==1)
+		
+		
+		var roomtype = Rooms[roomindex].Type
+		var addNorth = []
+		var addWest = []
+		var addSouth = []
+		var addEast = []
+		
+		for block in roomblocks:
+			if(block.GridP.y == 0):
+				if((roomtype&8)>>3 == 1 and connectedNorth):
+					var northBlock = Rooms[North[0][0]].BlocksGrid[block.GridP.x][BlocksGridSize.y-1]
+					if(typeof(northBlock) == typeof(block)):
+						var hasdoor = (Rooms[northBlock.RoomIndex].Type&2)>>1
+						if(hasdoor == 1):
+							addNorth.append([northBlock.RoomIndex,-Index])
+			
+			
+			if(block.GridP.x == 0):
+				if((roomtype&4)>>2 == 1 and connectedWest):
+					var westBlock = Rooms[West[0][0]].BlocksGrid[BlocksGridSize.x-1][block.GridP.y]
+					if(typeof(westBlock) == typeof(block)):
+						var hasdoor = (Rooms[westBlock.RoomIndex].Type&1)>>0
+						if(hasdoor == 1):
+							addWest.append([westBlock.RoomIndex,-Index])
+			
+			if(block.GridP.y == BlocksGridSize.y-1):
+				if((roomtype&2)>>1 == 1 and connectedSouth):
+					var southBlock = Rooms[South[0][0]].BlocksGrid[block.GridP.x][0]
+					if(typeof(southBlock) == typeof(block)):
+						var hasdoor = (Rooms[southBlock.RoomIndex].Type&8)>>3
+						if(hasdoor == 1):
+							addSouth.append([southBlock.RoomIndex,-Index])
+			
+			if(block.GridP.x == BlocksGridSize.x-1):
+				if((roomtype&1)>>0 == 1 and connectedEast):
+					var eastBlock = Rooms[East[0][0]].BlocksGrid[0][block.GridP.y]
+					if(typeof(eastBlock) == typeof(block)):
+						var hasdoor = (Rooms[eastBlock.RoomIndex].Type&4)>>2
+						if(hasdoor == 1):
+							addEast.append([eastBlock.RoomIndex,-Index])
+		
+		EraseConnections(roomindex,-Index)
+		for entry in addNorth:
+			Rooms[roomindex].North.append(entry)
+		for entry in addWest:
+			Rooms[roomindex].West.append(entry)
+		for entry in addSouth:
+			Rooms[roomindex].South.append(entry)
+		for entry in addEast:
+			Rooms[roomindex].East.append(entry)
 
 
 
-func ComputeSingleBlock():
+func ComputeMiddleBlocks():
 	var rect = Rect2(0,0,BlocksGridSize.x-0.5,BlocksGridSize.y-0.5)
 	
 	for roomblocks in BlocksArray:
-		
-		
-		
-		
 		var roomindex = roomblocks[0].RoomIndex
 		EraseConnections(roomindex,Index)
-		EraseConnections(roomindex,-Index)
-		
-		if(Index == 6 and roomindex == 14):
-			var temp = 5
-		
-		if(roomindex == 9):
-			var temp = 0
 		
 		
 		var hasNorth = (Rooms[roomindex].Type&8)>>3
@@ -273,14 +311,6 @@ func ComputeSingleBlock():
 						var hasdoor = (Rooms[index].Type&2)>>1
 						if(hasdoor == 1):
 							Rooms[roomindex].North.append([index,Index])
-				else:
-					#EraseNorth(roomindex,-Index)
-					if(NumConnections(North) == 1):
-						var northBlock = Rooms[North[0][0]].BlocksGrid[point.x][BlocksGridSize.y-1]
-						if(typeof(northBlock) == typeof(block)):
-							var hasdoor = (Rooms[northBlock.RoomIndex].Type&2)>>1
-							if(hasdoor == 1):
-								Rooms[roomindex].North.append([northBlock.RoomIndex,-Index])
 			
 			if(hasWest == 1):
 				var point = block.GridP + Vector2(-1,0)
@@ -290,14 +320,6 @@ func ComputeSingleBlock():
 						var hasdoor = (Rooms[index].Type&1)>>0
 						if(hasdoor == 1):
 							Rooms[roomindex].West.append([index,Index])
-				else:
-					#EraseWest(roomindex,-Index)
-					if(NumConnections(West) == 1):
-						var westBlock = Rooms[West[0][0]].BlocksGrid[BlocksGridSize.x-1][point.y]
-						if(typeof(westBlock) == typeof(block)):
-							var hasdoor = (Rooms[westBlock.RoomIndex].Type&1)>>0
-							if(hasdoor == 1):
-								Rooms[roomindex].West.append([westBlock.RoomIndex,-Index])
 			
 			if(hasSouth == 1):
 				var point = block.GridP + Vector2(0,1)
@@ -307,14 +329,6 @@ func ComputeSingleBlock():
 						var hasdoor = (Rooms[index].Type&8)>>3
 						if(hasdoor == 1):
 							Rooms[roomindex].South.append([index,Index])
-				else:
-					#EraseSouth(roomindex,-Index)
-					if(NumConnections(South) == 1):
-						var southBlock = Rooms[South[0][0]].BlocksGrid[point.x][0]
-						if(typeof(southBlock) == typeof(block)):
-							var hasdoor = (Rooms[southBlock.RoomIndex].Type&8)>>3
-							if(hasdoor == 1):
-								Rooms[roomindex].South.append([southBlock.RoomIndex,-Index])
 			
 			if(hasEast == 1):
 				var point = block.GridP + Vector2(1,0)
@@ -324,11 +338,3 @@ func ComputeSingleBlock():
 						var hasdoor = (Rooms[index].Type&4)>>2
 						if(hasdoor == 1):
 							Rooms[roomindex].East.append([index,Index])
-				else:
-					#EraseEast(roomindex,-Index)
-					if(NumConnections(East) == 1):
-						var eastBlock = Rooms[East[0][0]].BlocksGrid[0][point.y]
-						if(typeof(eastBlock) == typeof(block)):
-							var hasdoor = (Rooms[eastBlock.RoomIndex].Type&4)>>2
-							if(hasdoor == 1):
-								Rooms[roomindex].East.append([eastBlock.RoomIndex,-Index])
