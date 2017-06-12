@@ -10,18 +10,18 @@ var PresentRoom
 var Rooms
 
 func _ready():
-	if(get_node("../../") != get_viewport()):
+	if(get_node("../../../") != get_viewport()):
 		PresentRoom = get_node("../")
 		Rooms = get_node("../../").Rooms
 	else:
 		Rooms = get_node("../").Rooms
-		PresentRoom = Rooms[0]
+		PresentRoom = get_node("../").DummyRoom
 
 func _process(delta):
 	update()
 
 func _draw():
-	DrawRoom(RoomIndex,Vector2(0,0),BoundingBox.size,Rooms[RoomIndex].RoomColor,1)
+	DrawRoom(RoomIndex,Vector2(0,0),BoundingBox.size,Rooms[RoomIndex].RoomColor,2)
 
 func DrawRoom(index,pos,size,color,num):
 	color.r *= ColorMod.x
@@ -123,15 +123,28 @@ func DrawRoom(index,pos,size,color,num):
 	if(hasexit):
 		draw_rect(Rect2(pos+(size-linegirth)*0.5,linegirth),Color(0,0,0))
 	
-	
-	draw_line(pos,pos+Vector2(size.x,0),Color(0,0,0))
-	draw_line(pos,pos+Vector2(0,size.x),Color(0,0,0))
-	draw_line(pos+Vector2(size.x,0),pos+size,Color(0,0,0))
-	draw_line(pos+Vector2(0,size.y),pos+size,Color(0,0,0))
-	
-	
+	if(index == 8):
+		var pos = Vector2(0.5*size.x,0.75*size.y)
+		pos -= Vector2(0.25*borderdim.x,0.5*borderdim.y)
+		var size = Vector2(0.5*borderdim.x,borderdim.y)
+		draw_rect(Rect2(pos,size),bordercolor)
+		pos += Vector2(-0.5*borderdim.x,0.5*borderdim.y)
+		size = Vector2(1.5*borderdim.x,0.5*borderdim.y)
+		draw_rect(Rect2(pos,size),bordercolor)
+	if(index == 9):
+		var pos = Vector2(0.75*size.x,borderdim.y)
+		pos -= Vector2(0.333333*borderdim.x,0)
+		var size = Vector2(0.666666*borderdim.x,borderdim.y)
+		draw_rect(Rect2(pos,size),bordercolor)
 	
 	if(num > 0):
+		
+		draw_line(pos,pos+Vector2(size.x,0),Color(0,0,0))
+		draw_line(pos,pos+Vector2(0,size.x),Color(0,0,0))
+		draw_line(pos+Vector2(size.x,0),pos+size,Color(0,0,0))
+		draw_line(pos+Vector2(0,size.y),pos+size,Color(0,0,0))
+		
+		
 		for roomblocks in Rooms[index].BlocksArray:
 			for block in roomblocks:
 				var bpos = Vector2()
@@ -139,11 +152,11 @@ func DrawRoom(index,pos,size,color,num):
 				bpos.y = block.GridP.y*borderdim.y + pos.y
 				var markcolor
 				markcolor = Rooms[block.RoomIndex].RoomColor
-				markcolor.r *= 0.75
-				markcolor.g *= 0.75
-				markcolor.b *= 0.75
+				markcolor.r *= 0.9
+				markcolor.g *= 0.9
+				markcolor.b *= 0.9
 				DrawRoom(block.RoomIndex,bpos,borderdim,markcolor,num-1)
-				draw_line(bpos,bpos+Vector2(0,borderdim.y),Color(0,0,0))
-				draw_line(bpos,bpos+Vector2(borderdim.x,0),Color(0,0,0))
-				draw_line(bpos+Vector2(borderdim.x,0),bpos+borderdim,Color(0,0,0))
-				draw_line(bpos+Vector2(0,borderdim.y),bpos+borderdim,Color(0,0,0))
+				#draw_line(bpos,bpos+Vector2(0,borderdim.y),Color(0,0,0))
+				#draw_line(bpos,bpos+Vector2(borderdim.x,0),Color(0,0,0))
+				#draw_line(bpos+Vector2(borderdim.x,0),bpos+borderdim,Color(0,0,0))
+				#draw_line(bpos+Vector2(0,borderdim.y),bpos+borderdim,Color(0,0,0))

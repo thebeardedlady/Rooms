@@ -177,6 +177,7 @@ func InitBlocks(string):
 		BlocksGrid[pos.x][pos.y].BoundingBox.pos.x = pos.x * BlockSize.x
 		BlocksGrid[pos.x][pos.y].BoundingBox.pos.y = pos.y * BlockSize.y
 		BlocksGrid[pos.x][pos.y].set_pos(BlocksGrid[pos.x][pos.y].BoundingBox.pos)
+		BlocksGrid[pos.x][pos.y].set_z(10)
 		BlocksGrid[pos.x][pos.y].BoundingBox.size = BlockSize
 		var index = -1
 		for i in range(BlocksArray.size()):

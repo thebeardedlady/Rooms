@@ -1,14 +1,14 @@
 [gd_scene load_steps=6 format=1]
 
 [ext_resource path="res://level.gd" type="Script" id=1]
-[ext_resource path="res://deep_rumble.ogg" type="AudioStream" id=2]
-[ext_resource path="res://mouseclick1.smp" type="Sample" id=3]
-[ext_resource path="res://mouserelease1.smp" type="Sample" id=4]
+[ext_resource path="res://mouseclick1.smp" type="Sample" id=2]
+[ext_resource path="res://mouserelease1.smp" type="Sample" id=3]
+[ext_resource path="res://impossible.gd" type="Script" id=4]
 
 [sub_resource type="SampleLibrary" id=1]
 
-samples/mouseclick1 = { "db":0.0, "pitch":1.0, "sample":ExtResource( 3 ) }
-samples/mouserelease1 = { "db":0.0, "pitch":1.0, "sample":ExtResource( 4 ) }
+samples/mouseclick1 = { "db":0.0, "pitch":1.0, "sample":ExtResource( 2 ) }
+samples/mouserelease1 = { "db":0.0, "pitch":1.0, "sample":ExtResource( 3 ) }
 
 [node name="level" type="Node2D"]
 
@@ -24,10 +24,9 @@ playback/speed = 1.0
 
 [node name="camera" type="Camera2D" parent="."]
 
-transform/pos = Vector2( 400, 400 )
-anchor_mode = 1
+anchor_mode = 0
 rotating = false
-current = false
+current = true
 zoom = Vector2( 1, 1 )
 limit/left = -10000000
 limit/top = -10000000
@@ -44,7 +43,7 @@ drag_margin/bottom = 0.2
 
 [node name="bass" type="StreamPlayer" parent="."]
 
-stream/stream = ExtResource( 2 )
+stream/stream = null
 stream/play = false
 stream/loop = true
 stream/volume_db = 0.0
@@ -70,6 +69,10 @@ playback/process_mode = 1
 playback/active = false
 playback/repeat = false
 playback/speed = 1.0
+
+[node name="impossible" type="Node" parent="."]
+
+script/script = ExtResource( 4 )
 
 [connection signal="tween_complete" from="Tween" to="." method="_on_Tween_tween_complete"]
 
