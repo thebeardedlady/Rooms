@@ -12,11 +12,13 @@ var PickUpBlock = null
 var RoomSize = Vector2(800,800)
 var BlocksGridSize = Vector2(8,8)
 var FalseMove = false
+var GeneratingString = ""
 export var CurrentRoom = 1
 var DummyRoom = preload("res://room.tscn").instance()
 onready var impossible = get_node("impossible")
 onready var tween = get_node("Tween")
 onready var tween2 = get_node("Tween2")
+onready var main = get_node("../")
 
 
 
@@ -28,64 +30,62 @@ func _ready():
 	#var texts = ["1b61db","0b5556","fb670d","762305","7db49d","faa88f","374b32","ffc32c","5b1b5c","ae280f","7d8633","afd3d5","dbae1d","8b3e0f","2d6f3f","6851f1"]
 	var colors = ColorArray()
 	for text in texts:
-		var color = Color(text)
-		#color.h *= 0.9
-		colors.append(color)
-	var temp = 0
-	if(temp == 0):
-		CurrentRoom = 8
-		var room = load("res://room.tscn")
-		for i in range(16):
-			Rooms.append(room.instance())
-			Rooms[i].RoomColor = colors[i]
-			Rooms[i].Type = i
-			Rooms[i].Index = i
-			add_child(Rooms[i])
-			Rooms[i].hide()
-		
-		
-		var string = "10,2,2"
-		Rooms[2].InitBlocks(string)
-		string = "1,2,2/7,3,2/6,4,2/"
-		string += "3,2,3/15,3,3/13,4,3/4,5,3/"
-		string += "11,2,4/14,3,4/0,4,4/2,5,4/"
-		string += "8,2,5/9,3,5/5,4,5/12,6,5"
-		Rooms[9].InitBlocks(string)
-		string = "0,2,6/1,1,1/2,3,1/3,5,1/"
-		string += "4,2,2/5,4,2/6,6,2/"
-		string += "7,1,3/8,3,3/9,5,3/"
-		string += "10,2,4/11,4,4/12,6,4/"
-		string += "13,1,5/14,3,5/15,5,5"
-		Rooms[10].InitBlocks(string)
-		Rooms[CurrentRoom].show()
-		
-		Rooms[8].add_child(load("res://arrows.tscn").instance())
-		Rooms[9].add_child(load("res://mouse.tscn").instance())
-		
-		
-		Rooms[CurrentRoom].set_process(true)
-		for roomblocks in Rooms[CurrentRoom].BlocksArray:
-			for block in roomblocks:
-				block.set_process(true)
+		colors.append(Color(text))
+	var room = load("res://room.tscn")
+	for i in range(16):
+		Rooms.append(room.instance())
+		Rooms[i].RoomColor = colors[i]
+		Rooms[i].Type = i
+		Rooms[i].Index = i
+		add_child(Rooms[i])
+		Rooms[i].hide()
+	
+	#NOTE(ian): default set-up for rooms
+	if(GeneratingString == ""):
+		GeneratingString = "8"
+		#GeneratingString = "0"
+		#GeneratingString += "-"
+		#GeneratingString += "0;"
+		#GeneratingString += "0,2,2"
+		GeneratingString += "-"
+		GeneratingString += "2;"
+		GeneratingString += "10,2,2"
+		GeneratingString += "-"
+		GeneratingString += "9;"
+		GeneratingString += "1,2,2/7,3,2/6,4,2/"
+		GeneratingString += "3,2,3/15,3,3/13,4,3/4,5,3/"
+		GeneratingString += "11,2,4/14,3,4/0,4,4/2,5,4/"
+		GeneratingString += "8,2,5/9,3,5/5,4,5/12,6,5"
+		GeneratingString += "-"
+		GeneratingString += "10;"
+		GeneratingString += "0,2,6/1,1,1/2,3,1/3,5,1/"
+		GeneratingString += "4,2,2/5,4,2/6,6,2/"
+		GeneratingString += "7,1,3/8,3,3/9,5,3/"
+		GeneratingString += "10,2,4/11,4,4/12,6,4/"
+		GeneratingString += "13,1,5/14,3,5/15,5,5"
+	
+	var fileparts = GeneratingString.split("-",false)
+	CurrentRoom = fileparts[0].to_int()
+	for i in range(1,fileparts.size()):
+		var roomfile = fileparts[i].split(";",false)
+		Rooms[roomfile[0].to_int()].InitBlocks(roomfile[1])
+	ComputeEdgeBlocks(CurrentRoom)
+	Rooms[CurrentRoom].show()
+	
+	Rooms[8].add_child(load("res://arrows.tscn").instance())
+	Rooms[9].add_child(load("res://mouse.tscn").instance())
+	
+	
+	Rooms[CurrentRoom].set_process(true)
+	for roomblocks in Rooms[CurrentRoom].BlocksArray:
+		for block in roomblocks:
+			block.set_process(true)
 	
 	
 	DummyRoom.hide()
 	add_child(DummyRoom)
 	set_process_input(true)
 	set_process(true)
-
-func savecontent(content):
-	var file = File.new()
-	file.open("user://save_game.dat", file.WRITE)
-	file.store_string(content)
-	file.close()
-
-func loadcontent():
-	var file = File.new()
-	file.open("user://save_game.dat", file.READ)
-	var content = file.get_as_text()
-	file.close()
-	return content
 
 func CreateHSVColor(h,s,v):
 	var color = Color()
@@ -124,6 +124,15 @@ func ConnectBlocksInBlocks(h,roomindex):
 			for block in roomblocks:
 				ConnectBlocksInBlocks(h,block.RoomIndex)
 
+func ComputeEdgeBlocks(roomindex):
+	for n in range(10):
+		var h = []
+		h.resize(Rooms.size())
+		ConnectBlocksOnEdge(h,roomindex)
+		for i in range(Rooms.size()):
+			if(h[i] == null):
+				ConnectBlocksOnEdge(h,i)
+
 
 
 func _process(delta):
@@ -154,13 +163,7 @@ func _process(delta):
 			Rooms[CurrentRoom].EraseConnections(PickUpBlock.RoomIndex,CurrentRoom)
 			Rooms[CurrentRoom].EraseConnections(PickUpBlock.RoomIndex,-CurrentRoom)
 			Rooms[CurrentRoom].ComputeMiddleBlocks()
-			for n in range(10):
-				var h = []
-				h.resize(Rooms.size())
-				ConnectBlocksOnEdge(h,CurrentRoom)
-				for i in range(Rooms.size()):
-					if(h[i] == null):
-						ConnectBlocksOnEdge(h,i)
+			ComputeEdgeBlocks(CurrentRoom)
 			
 			Rooms[CurrentRoom].remove_child(PickUpBlock)
 			add_child(PickUpBlock)
@@ -189,70 +192,59 @@ func _process(delta):
 				PickUpRoom = CurrentRoom
 				PickUpPos = PickUpBlock.GridP
 		else:
-			PickUpBlock.ColorMod = Vector3(1,1,1)
-			remove_child(PickUpBlock)
-			PickUpBlock.set_scale(Vector2(1,1))
-			PickUpBlock.set_z(10)
-			var BlocksGrid = Rooms[CurrentRoom].BlocksGrid
-			if(BlocksGrid[PickUpBlock.GridP.x][PickUpBlock.GridP.y] == null):
-				var index = -1
-				var BlocksArray = Rooms[CurrentRoom].BlocksArray
-				for roomindex in range(BlocksArray.size()):
-					if(BlocksArray[roomindex][0].RoomIndex == PickUpBlock.RoomIndex):
-						index = roomindex
-				if(index == -1):
-					BlocksArray.append([PickUpBlock])
-				else:
-					BlocksArray[index].append(PickUpBlock)
-				
-				var pos = PickUpBlock.GridP
-				pos.x *= BlockSize.x
-				pos.y *= BlockSize.y
-				PickUpBlock.set_pos(pos)
-				BlocksGrid[PickUpBlock.GridP.x][PickUpBlock.GridP.y] = PickUpBlock
-				Rooms[CurrentRoom].ComputeMiddleBlocks()
-				for n in range(10):
-					var h = []
-					h.resize(Rooms.size())
-					ConnectBlocksOnEdge(h,CurrentRoom)
-					for i in range(Rooms.size()):
-						if(h[i] == null):
-							ConnectBlocksOnEdge(h,i)
-				
-				
-				
-				Rooms[CurrentRoom].add_child(PickUpBlock)
-			else:
-				var index = -1
-				BlocksGrid = Rooms[PickUpRoom].BlocksGrid
-				var BlocksArray = Rooms[PickUpRoom].BlocksArray
-				for roomindex in range(BlocksArray.size()):
-					if(BlocksArray[roomindex][0].RoomIndex == PickUpBlock.RoomIndex):
-						index = roomindex
-				if(index == -1):
-					BlocksArray.append([PickUpBlock])
-				else:
-					BlocksArray[index].append(PickUpBlock)
-				PickUpBlock.GridP = PickUpPos
-				BlocksGrid[PickUpBlock.GridP.x][PickUpBlock.GridP.y] = PickUpBlock
-				var pos = PickUpBlock.GridP
-				pos.x *= BlockSize.x
-				pos.y *= BlockSize.y
-				PickUpBlock.set_pos(pos)
-				PickUpBlock.BoundingBox.pos = pos
-				if(PickUpRoom != CurrentRoom):
-					PickUpBlock.set_process(false)
-				Rooms[PickUpRoom].ComputeMiddleBlocks()
-				for n in range(10):
-					var h = []
-					h.resize(Rooms.size())
-					ConnectBlocksOnEdge(h,CurrentRoom)
-					for i in range(Rooms.size()):
-						if(h[i] == null):
-							ConnectBlocksOnEdge(h,i)
-				Rooms[PickUpRoom].add_child(PickUpBlock)
-			PickUp = false
-			PickUpBlock = null
+			DropBlock()
+
+func DropBlock():
+	var BlockSize = Rooms[CurrentRoom].BlockSize
+	PickUpBlock.ColorMod = Vector3(1,1,1)
+	remove_child(PickUpBlock)
+	PickUpBlock.set_scale(Vector2(1,1))
+	PickUpBlock.set_z(10)
+	var BlocksGrid = Rooms[CurrentRoom].BlocksGrid
+	if(BlocksGrid[PickUpBlock.GridP.x][PickUpBlock.GridP.y] == null):
+		var index = -1
+		var BlocksArray = Rooms[CurrentRoom].BlocksArray
+		for roomindex in range(BlocksArray.size()):
+			if(BlocksArray[roomindex][0].RoomIndex == PickUpBlock.RoomIndex):
+				index = roomindex
+		if(index == -1):
+			BlocksArray.append([PickUpBlock])
+		else:
+			BlocksArray[index].append(PickUpBlock)
+		
+		var pos = PickUpBlock.GridP
+		pos.x *= BlockSize.x
+		pos.y *= BlockSize.y
+		PickUpBlock.set_pos(pos)
+		BlocksGrid[PickUpBlock.GridP.x][PickUpBlock.GridP.y] = PickUpBlock
+		Rooms[CurrentRoom].ComputeMiddleBlocks()
+		ComputeEdgeBlocks(CurrentRoom)
+		Rooms[CurrentRoom].add_child(PickUpBlock)
+	else:
+		var index = -1
+		BlocksGrid = Rooms[PickUpRoom].BlocksGrid
+		var BlocksArray = Rooms[PickUpRoom].BlocksArray
+		for roomindex in range(BlocksArray.size()):
+			if(BlocksArray[roomindex][0].RoomIndex == PickUpBlock.RoomIndex):
+				index = roomindex
+		if(index == -1):
+			BlocksArray.append([PickUpBlock])
+		else:
+			BlocksArray[index].append(PickUpBlock)
+		PickUpBlock.GridP = PickUpPos
+		BlocksGrid[PickUpBlock.GridP.x][PickUpBlock.GridP.y] = PickUpBlock
+		var pos = PickUpBlock.GridP
+		pos.x *= BlockSize.x
+		pos.y *= BlockSize.y
+		PickUpBlock.set_pos(pos)
+		PickUpBlock.BoundingBox.pos = pos
+		if(PickUpRoom != CurrentRoom):
+			PickUpBlock.set_process(false)
+		Rooms[PickUpRoom].ComputeMiddleBlocks()
+		ComputeEdgeBlocks(PickUpRoom)
+		Rooms[PickUpRoom].add_child(PickUpBlock)
+	PickUp = false
+	PickUpBlock = null
 
 
 
@@ -261,7 +253,22 @@ func _input(event):
 	if(event.type == InputEvent.KEY and event.is_pressed()):
 		
 		if(event.scancode == KEY_ESCAPE):
+			if(PickUp):
+				DropBlock()
+			var savedata = str(CurrentRoom)
+			for i in range(Rooms.size()):
+				if(Rooms[i].BlocksArray.size() > 0):
+					savedata += "-" + str(i) + ";"
+					for roomblocks in Rooms[i].BlocksArray:
+						for block in roomblocks:
+							var blockdata = str(block.RoomIndex) + ","
+							blockdata += str(block.GridP.x) + ","
+							blockdata += str(block.GridP.y) + "/"
+							savedata += blockdata
+			main.savecontent(savedata)
 			get_tree().quit()
+		
+		
 		
 		
 		var type = Rooms[CurrentRoom].Type
