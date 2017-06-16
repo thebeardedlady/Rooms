@@ -12,9 +12,13 @@ var PickUpBlock = null
 var RoomSize = Vector2(800,800)
 var BlocksGridSize = Vector2(8,8)
 var FalseMove = false
+var DrosteMove = false
+var DrosteRoom = -1
+var DrosteBox = Rect2()
 var GeneratingString = ""
 export var CurrentRoom = 1
 var DummyRoom = preload("res://room.tscn").instance()
+onready var CurrentCamera = get_node("camera")
 onready var impossible = get_node("impossible")
 onready var tween = get_node("Tween")
 onready var tween2 = get_node("Tween2")
@@ -40,36 +44,56 @@ func _ready():
 		add_child(Rooms[i])
 		Rooms[i].hide()
 	
-	#NOTE(ian): default set-up for rooms
 	if(GeneratingString == ""):
-		GeneratingString = "8"
-		#GeneratingString = "0"
-		#GeneratingString += "-"
-		#GeneratingString += "0;"
-		#GeneratingString += "0,2,2"
-		GeneratingString += "-"
-		GeneratingString += "2;"
-		GeneratingString += "10,2,2"
-		GeneratingString += "-"
-		GeneratingString += "9;"
-		GeneratingString += "1,2,2/7,3,2/6,4,2/"
-		GeneratingString += "3,2,3/15,3,3/13,4,3/4,5,3/"
-		GeneratingString += "11,2,4/14,3,4/0,4,4/2,5,4/"
-		GeneratingString += "8,2,5/9,3,5/5,4,5/12,6,5"
-		GeneratingString += "-"
-		GeneratingString += "10;"
-		GeneratingString += "0,2,6/1,1,1/2,3,1/3,5,1/"
-		GeneratingString += "4,2,2/5,4,2/6,6,2/"
-		GeneratingString += "7,1,3/8,3,3/9,5,3/"
-		GeneratingString += "10,2,4/11,4,4/12,6,4/"
-		GeneratingString += "13,1,5/14,3,5/15,5,5"
+		#NOTE(ian): default set-up for rooms
+		var string = "8"
+		string += "_"
+		#string += "0,0,0,0;'0,0,0,1;7,9'0,0,0,0;'0,0,1,1;11,9,15,9'"
+		#string += "0,1,0,0;13,9'0,1,0,0;9,9'0,1,1,0;7,9,13,9'0,1,1,1;1,9,15,9,6,9'"
+		#string += "0,0,0,0;'1,0,0,1;14,9,5,9'0,0,0,0;'1,0,1,1;"
+		string += "_"
+		string += "2;"
+		string += "10,2,2"
+		string += "_"
+		string += "9;"
+		string += "1,2,2/7,3,2/6,4,2/"
+		string += "3,2,3/15,3,3/13,4,3/4,5,3/"
+		string += "11,2,4/14,3,4/0,4,4/2,5,4/"
+		string += "8,2,5/9,3,5/5,4,5/12,6,5"
+		string += "_"
+		string += "10;"
+		string += "0,2,6/1,1,1/2,3,1/3,5,1/"
+		string += "4,2,2/5,4,2/6,6,2/"
+		string += "7,1,3/8,3,3/9,5,3/"
+		string += "10,2,4/11,4,4/12,6,4/"
+		string += "13,1,5/14,3,5/15,5,5"
+		GeneratingString = string
 	
-	var fileparts = GeneratingString.split("-",false)
+	var fileparts = GeneratingString.split("_",true)
 	CurrentRoom = fileparts[0].to_int()
-	for i in range(1,fileparts.size()):
+	var connections = fileparts[1].split("'",false)
+	for i in range(connections.size()):
+		var roominfo = connections[i].split(";",false)
+		if(roominfo.size() > 1):
+			var nums = roominfo[0].split(",",false)
+			var entries = roominfo[1].split(",",false)
+			var k = 0
+			for j in range(nums[0].to_int()):
+				Rooms[i].North.append([entries[2*(j+k)].to_int(),entries[2*(j+k)+1].to_int()])
+			k += nums[0].to_int()
+			for j in range(nums[1].to_int()):
+				Rooms[i].West.append([entries[2*(j+k)].to_int(),entries[2*(j+k)+1].to_int()])
+			k += nums[1].to_int()
+			for j in range(nums[2].to_int()):
+				Rooms[i].South.append([entries[2*(j+k)].to_int(),entries[2*(j+k)+1].to_int()])
+			k += nums[2].to_int()
+			for j in range(nums[3].to_int()):
+				Rooms[i].East.append([entries[2*(j+k)].to_int(),entries[2*(j+k)+1].to_int()])
+			k += nums[3].to_int()
+	for i in range(2,fileparts.size()):
 		var roomfile = fileparts[i].split(";",false)
 		Rooms[roomfile[0].to_int()].InitBlocks(roomfile[1])
-	ComputeEdgeBlocks(CurrentRoom)
+	#ComputeEdgeBlocks(CurrentRoom)
 	Rooms[CurrentRoom].show()
 	
 	Rooms[8].add_child(load("res://arrows.tscn").instance())
@@ -160,8 +184,17 @@ func _process(delta):
 						else:
 							Rooms[CurrentRoom].BlocksArray[roomindex].remove(blockindex)
 			
+			
+			#TODO(ian): The 'EraseEdge' functions are a hack solution. Maybe think of something better?
 			Rooms[CurrentRoom].EraseConnections(PickUpBlock.RoomIndex,CurrentRoom)
-			Rooms[CurrentRoom].EraseConnections(PickUpBlock.RoomIndex,-CurrentRoom)
+			if(PickUpPos.y == 0):
+				Rooms[CurrentRoom].EraseEdgeNorth(PickUpBlock.RoomIndex,-CurrentRoom)
+			if(PickUpPos.x == 0):
+				Rooms[CurrentRoom].EraseEdgeWest(PickUpBlock.RoomIndex,-CurrentRoom)
+			if(PickUpPos.y == BlocksGridSize.y-1):
+				Rooms[CurrentRoom].EraseEdgeSouth(PickUpBlock.RoomIndex,-CurrentRoom)
+			if(PickUpPos.x == BlocksGridSize.x-1):
+				Rooms[CurrentRoom].EraseEdgeEast(PickUpBlock.RoomIndex,-CurrentRoom)
 			Rooms[CurrentRoom].ComputeMiddleBlocks()
 			ComputeEdgeBlocks(CurrentRoom)
 			
@@ -220,6 +253,7 @@ func DropBlock():
 		Rooms[CurrentRoom].ComputeMiddleBlocks()
 		ComputeEdgeBlocks(CurrentRoom)
 		Rooms[CurrentRoom].add_child(PickUpBlock)
+		get_node("sfx").play("box")
 	else:
 		var index = -1
 		BlocksGrid = Rooms[PickUpRoom].BlocksGrid
@@ -240,6 +274,8 @@ func DropBlock():
 		PickUpBlock.BoundingBox.pos = pos
 		if(PickUpRoom != CurrentRoom):
 			PickUpBlock.set_process(false)
+		else:
+			get_node("sfx").play("box")
 		Rooms[PickUpRoom].ComputeMiddleBlocks()
 		ComputeEdgeBlocks(PickUpRoom)
 		Rooms[PickUpRoom].add_child(PickUpBlock)
@@ -248,27 +284,72 @@ func DropBlock():
 
 
 
+func SaveGame():
+	if(PickUp):
+		DropBlock()
+	var savedata = str(CurrentRoom) + "_"
+	var roomdata = ""
+	for room in Rooms:
+		roomdata += str(room.North.size()) + ","
+		roomdata += str(room.West.size()) + ","
+		roomdata += str(room.South.size()) + ","
+		roomdata += str(room.East.size()) + ";"
+		for entry in room.North:
+			roomdata += str(entry[0]) + "," + str(entry[1]) + ","
+		for entry in room.West:
+			roomdata += str(entry[0]) + "," + str(entry[1]) + ","
+		for entry in room.South:
+			roomdata += str(entry[0]) + "," + str(entry[1]) + ","
+		for entry in room.East:
+			roomdata += str(entry[0]) + "," + str(entry[1]) + ","
+		roomdata += "'"
+	savedata += roomdata
+	for i in range(Rooms.size()):
+		if(Rooms[i].BlocksArray.size() > 0):
+			savedata += "_" + str(i) + ";"
+			for roomblocks in Rooms[i].BlocksArray:
+				for block in roomblocks:
+					var blockdata = str(block.RoomIndex) + ","
+					blockdata += str(block.GridP.x) + ","
+					blockdata += str(block.GridP.y) + "/"
+					savedata += blockdata
+	main.savecontent(savedata)
+
+
 
 func _input(event):
 	if(event.type == InputEvent.KEY and event.is_pressed()):
 		
 		if(event.scancode == KEY_ESCAPE):
-			if(PickUp):
-				DropBlock()
-			var savedata = str(CurrentRoom)
-			for i in range(Rooms.size()):
-				if(Rooms[i].BlocksArray.size() > 0):
-					savedata += "-" + str(i) + ";"
-					for roomblocks in Rooms[i].BlocksArray:
-						for block in roomblocks:
-							var blockdata = str(block.RoomIndex) + ","
-							blockdata += str(block.GridP.x) + ","
-							blockdata += str(block.GridP.y) + "/"
-							savedata += blockdata
-			main.savecontent(savedata)
+			SaveGame()
 			get_tree().quit()
 		
-		
+		if(event.scancode == KEY_SPACE):
+			
+			for roomblocks in Rooms[CurrentRoom].BlocksArray:
+				for block in roomblocks:
+					if(block.BoundingBox.has_point(get_global_mouse_pos())):
+						DrosteMove = true
+						DrosteRoom = block.RoomIndex
+						DrosteBox = block.BoundingBox
+			
+			if(DrosteMove):
+				var zoom = Vector2()
+				zoom.x = DrosteBox.size.x/get_viewport_rect().size.x
+				zoom.y = DrosteBox.size.y/get_viewport_rect().size.y
+				
+				tween.interpolate_property(CurrentCamera,"transform/pos",CurrentCamera.get_pos(),DrosteBox.pos,1.0,1,2)
+				tween.interpolate_property(CurrentCamera,"zoom",CurrentCamera.get_zoom(),zoom,1.0,1,2)
+				set_process(false)
+				set_process_input(false)
+				Rooms[CurrentRoom].set_process(false)
+				for roomblocks in Rooms[CurrentRoom].BlocksArray:
+					for block in roomblocks:
+						block.ColorMod = Vector3(1,1,1)
+						block.update()
+						block.set_process(false)
+				DrosteMove = true
+				tween.start()
 		
 		
 		var type = Rooms[CurrentRoom].Type
@@ -307,7 +388,7 @@ func _input(event):
 								impossible.RoomCycle.append(Rooms[roomindex])
 								Rooms[roomindex].set_pos(Vector2(0,-RoomSize.y))
 						impossible.set_process(true)
-					tween.interpolate_property(get_node("camera"),"transform/pos",get_node("camera").get_pos(),Vector2(0,-RoomSize.y*0.5),0.25,0,0)
+					tween.interpolate_property(CurrentCamera,"transform/pos",CurrentCamera.get_pos(),Vector2(0,-RoomSize.y*0.5),0.25,0,0)
 					set_process_input(false)
 					set_process(false)
 					FalseMove = true
@@ -348,7 +429,7 @@ func _input(event):
 								impossible.RoomCycle.append(Rooms[roomindex])
 								Rooms[roomindex].set_pos(Vector2(-RoomSize.x,0))
 						impossible.set_process(true)
-					tween.interpolate_property(get_node("camera"),"transform/pos",get_node("camera").get_pos(),Vector2(-RoomSize.x*0.5,0),0.25,0,0)
+					tween.interpolate_property(CurrentCamera,"transform/pos",CurrentCamera.get_pos(),Vector2(-RoomSize.x*0.5,0),0.25,0,0)
 					set_process_input(false)
 					set_process(false)
 					FalseMove = true
@@ -389,7 +470,7 @@ func _input(event):
 								impossible.RoomCycle.append(Rooms[roomindex])
 								Rooms[roomindex].set_pos(Vector2(0,RoomSize.y))
 						impossible.set_process(true)
-					tween.interpolate_property(get_node("camera"),"transform/pos",get_node("camera").get_pos(),Vector2(0,RoomSize.y*0.5),0.25,0,0)
+					tween.interpolate_property(CurrentCamera,"transform/pos",CurrentCamera.get_pos(),Vector2(0,RoomSize.y*0.5),0.25,0,0)
 					set_process_input(false)
 					set_process(false)
 					FalseMove = true
@@ -430,7 +511,7 @@ func _input(event):
 								impossible.RoomCycle.append(Rooms[roomindex])
 								Rooms[roomindex].set_pos(Vector2(RoomSize.x,0))
 						impossible.set_process(true)
-					tween.interpolate_property(get_node("camera"),"transform/pos",get_node("camera").get_pos(),Vector2(RoomSize.x*0.5,0),0.25,0,0)
+					tween.interpolate_property(CurrentCamera,"transform/pos",CurrentCamera.get_pos(),Vector2(RoomSize.x*0.5,0),0.25,0,0)
 					set_process_input(false)
 					set_process(false)
 					FalseMove = true
@@ -539,9 +620,36 @@ func _on_Tween_tween_complete( object, key ):
 		set_process_input(true)
 	
 	if(FalseMove):
-		tween2.interpolate_property(get_node("camera"),"transform/pos",get_node("camera").get_pos(),Vector2(0,0),0.25,0,1,0.25)
+		tween2.interpolate_property(CurrentCamera,"transform/pos",CurrentCamera.get_pos(),Vector2(0,0),0.25,0,1,0.25)
 		tween2.start()
 		FalseMove = false
+	
+	
+	if(DrosteMove):
+		tween.remove_all()
+		Rooms[CurrentRoom].hide()
+		CurrentRoom = DrosteRoom
+		Rooms[CurrentRoom].show()
+		Rooms[CurrentRoom].set_pos(Vector2(0,0))
+		Rooms[CurrentRoom].set_process(true)
+		for roomblocks in Rooms[CurrentRoom].BlocksArray:
+			for block in roomblocks:
+				block.set_process(true)
+		#var zoomout = Vector2()
+		#zoomout.x = get_viewport_rect().size.x/DrosteBox.size.x
+		#zoomout.y = get_viewport_rect().size.y/DrosteBox.size.y
+		#CurrentCamera.set_zoom(zoomout)
+		#CurrentCamera.set_zoom(Vector2(1,1))
+		#CurrentCamera.set_pos(Rooms[CurrentRoom].get_pos())
+		CurrentCamera.clear_current()
+		remove_child(CurrentCamera)
+		CurrentCamera = load("res://camera.tscn").instance()
+		CurrentCamera.make_current()
+		add_child(CurrentCamera)
+		set_process(true)
+		set_process_input(true)
+		DrosteMove = false
+		DrosteRoom = -1
 
 
 func _on_Tween2_tween_complete( object, key ):

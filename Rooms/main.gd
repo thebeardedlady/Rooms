@@ -4,11 +4,13 @@ var Level
 
 
 func _ready():
-	var content = loadcontent()
+	
 	Level = load("res://level.tscn").instance()
-	Level.GeneratingString = content
+	Level.GeneratingString = loadcontent()
+	print(Level.GeneratingString)
 	add_child(Level)
 	set_process_input(true)
+	
 
 
 func _input(event):
@@ -18,6 +20,11 @@ func _input(event):
 			savecontent("")
 			Level = load("res://level.tscn").instance()
 			Level.GeneratingString = ""
+			add_child(Level)
+		if(event.scancode == KEY_P):
+			remove_child(Level)
+			Level = load("res://level.tscn").instance()
+			Level.GeneratingString = loadcontent()
 			add_child(Level)
 
 

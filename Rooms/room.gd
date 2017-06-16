@@ -189,8 +189,8 @@ func InitBlocks(string):
 			BlocksArray[index].append(BlocksGrid[pos.x][pos.y])
 		add_child(BlocksGrid[pos.x][pos.y])
 		i += 1
-	
-	ComputeMiddleBlocks()
+		
+		ComputeMiddleBlocks()
 
 
 
@@ -225,6 +225,55 @@ func EraseEast(blockindex,roomindex):
 		var deletedindex = Rooms[blockindex].East[i][1]
 		if(deletedindex == roomindex):
 			Rooms[blockindex].East.remove(i)
+
+func EraseEdgeNorth(blockindex,roomindex):
+	var value = null
+	for i in range(Rooms[blockindex].North.size()-1,-1,-1):
+		var deletedindex = Rooms[blockindex].North[i][1]
+		if(deletedindex == roomindex):
+			if(Rooms[blockindex].North.count(Rooms[blockindex].North[i]) < 2):
+				Rooms[blockindex].North.remove(i)
+			else:
+				value = Rooms[blockindex].North[i]
+	if(value != null):
+		Rooms[blockindex].North.erase(value)
+	
+
+func EraseEdgeWest(blockindex,roomindex):
+	var value = null
+	for i in range(Rooms[blockindex].West.size()-1,-1,-1):
+		var deletedindex = Rooms[blockindex].West[i][1]
+		if(deletedindex == roomindex):
+			if(Rooms[blockindex].West.count(Rooms[blockindex].West[i]) < 2):
+				Rooms[blockindex].West.remove(i)
+			else:
+				value = Rooms[blockindex].West[i]
+	if(value != null):
+		Rooms[blockindex].West.erase(value)
+
+func EraseEdgeSouth(blockindex,roomindex):
+	var value = null
+	for i in range(Rooms[blockindex].South.size()-1,-1,-1):
+		var deletedindex = Rooms[blockindex].South[i][1]
+		if(deletedindex == roomindex):
+			if(Rooms[blockindex].South.count(Rooms[blockindex].South[i]) < 2):
+				Rooms[blockindex].South.remove(i)
+			else:
+				value = Rooms[blockindex].South[i]
+	if(value != null):
+		Rooms[blockindex].South.erase(value)
+
+func EraseEdgeEast(blockindex,roomindex):
+	var value = null
+	for i in range(Rooms[blockindex].East.size()-1,-1,-1):
+		var deletedindex = Rooms[blockindex].East[i][1]
+		if(deletedindex == roomindex):
+			if(Rooms[blockindex].East.count(Rooms[blockindex].East[i]) < 2):
+				Rooms[blockindex].East.remove(i)
+			else:
+				value = Rooms[blockindex].East[i]
+	if(value != null):
+		Rooms[blockindex].East.erase(value)
 
 
 func ComputeEdgeBlocks():

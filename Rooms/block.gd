@@ -123,21 +123,21 @@ func DrawRoom(index,pos,size,color,num):
 	if(hasexit):
 		draw_rect(Rect2(pos+(size-linegirth)*0.5,linegirth),Color(0,0,0))
 	
-	if(index == 8):
-		var pos = Vector2(0.5*size.x,0.75*size.y)
-		pos -= Vector2(0.25*borderdim.x,0.5*borderdim.y)
-		var size = Vector2(0.5*borderdim.x,borderdim.y)
-		draw_rect(Rect2(pos,size),bordercolor)
-		pos += Vector2(-0.5*borderdim.x,0.5*borderdim.y)
-		size = Vector2(1.5*borderdim.x,0.5*borderdim.y)
-		draw_rect(Rect2(pos,size),bordercolor)
-	if(index == 9):
-		var pos = Vector2(0.75*size.x,borderdim.y)
-		pos -= Vector2(0.333333*borderdim.x,0)
-		var size = Vector2(0.666666*borderdim.x,borderdim.y)
-		draw_rect(Rect2(pos,size),bordercolor)
-	
 	if(num > 0):
+		if(index == 8):
+			var p = pos + Vector2(0.5*size.x,0.75*size.y)
+			p -= Vector2(0.25*borderdim.x,0.5*borderdim.y)
+			var size = Vector2(0.5*borderdim.x,borderdim.y)
+			draw_rect(Rect2(p,size),bordercolor)
+			p += Vector2(-0.5*borderdim.x,0.5*borderdim.y)
+			size = Vector2(1.5*borderdim.x,0.5*borderdim.y)
+			draw_rect(Rect2(p,size),bordercolor)
+		if(index == 9):
+			var p = pos + Vector2(0.75*size.x,borderdim.y)
+			p -= Vector2(0.333333*borderdim.x,0)
+			var size = Vector2(0.666666*borderdim.x,borderdim.y)
+			draw_rect(Rect2(p,size),bordercolor)
+	
 		
 		draw_line(pos,pos+Vector2(size.x,0),Color(0,0,0))
 		draw_line(pos,pos+Vector2(0,size.x),Color(0,0,0))
