@@ -16,6 +16,7 @@ var DrosteMove = false
 var DrosteRoom = -1
 var DrosteBox = Rect2()
 var GeneratingString = ""
+var Count = 0.0
 export var CurrentRoom = 1
 var DummyRoom = preload("res://room.tscn").instance()
 onready var CurrentCamera = get_node("camera")
@@ -160,6 +161,7 @@ func ComputeEdgeBlocks(roomindex):
 
 
 func _process(delta):
+	Count += delta
 	if(not PickUp):
 		for roomblocks in Rooms[CurrentRoom].BlocksArray:
 			for block in roomblocks:
@@ -249,6 +251,7 @@ func DropBlock():
 		pos.x *= BlockSize.x
 		pos.y *= BlockSize.y
 		PickUpBlock.set_pos(pos)
+		PickUpBlock.BoundingBox.pos = pos
 		BlocksGrid[PickUpBlock.GridP.x][PickUpBlock.GridP.y] = PickUpBlock
 		Rooms[CurrentRoom].ComputeMiddleBlocks()
 		ComputeEdgeBlocks(CurrentRoom)
@@ -324,7 +327,7 @@ func _input(event):
 			SaveGame()
 			get_tree().quit()
 		
-		if(event.scancode == KEY_SPACE):
+		if(event.scancode == KEY_SPACE and Count > 0.1):
 			
 			for roomblocks in Rooms[CurrentRoom].BlocksArray:
 				for block in roomblocks:
@@ -340,6 +343,24 @@ func _input(event):
 				
 				tween.interpolate_property(CurrentCamera,"transform/pos",CurrentCamera.get_pos(),DrosteBox.pos,1.0,1,2)
 				tween.interpolate_property(CurrentCamera,"zoom",CurrentCamera.get_zoom(),zoom,1.0,1,2)
+				if(PickUp):
+					var BlockSize = Rooms[CurrentRoom].BlockSize
+					var pos = DrosteBox.pos
+					var shift = Vector2()
+					shift.x = BlockSize.x/BlocksGridSize.x
+					shift.y = BlockSize.y/BlocksGridSize.y
+					pos.x += PickUpBlock.GridP.x*shift.x
+					pos.y += PickUpBlock.GridP.y*shift.y
+					shift *= 0.25
+					pos -= shift
+					var scale = Vector2(1,1)
+					scale.x /= BlocksGridSize.x
+					scale.y /= BlocksGridSize.y
+					scale.x *= 1.5
+					scale.y *= 1.5
+					PickUpBlock.ColorMod = Vector3(1,1,1)
+					tween.interpolate_property(PickUpBlock,"transform/scale",PickUpBlock.get_scale(),scale,1.0,1,2)
+					tween.interpolate_property(PickUpBlock,"transform/pos",PickUpBlock.get_pos(),pos,1.0,1,2)
 				set_process(false)
 				set_process_input(false)
 				Rooms[CurrentRoom].set_process(false)
@@ -350,6 +371,7 @@ func _input(event):
 						block.set_process(false)
 				DrosteMove = true
 				tween.start()
+				Count = 0.0
 		
 		
 		var type = Rooms[CurrentRoom].Type
@@ -648,6 +670,13 @@ func _on_Tween_tween_complete( object, key ):
 		add_child(CurrentCamera)
 		set_process(true)
 		set_process_input(true)
+		if(PickUp):
+			PickUpBlock.set_scale(Vector2(1,1))
+			var pos = Vector2()
+			var BlockSize = Rooms[CurrentRoom].BlockSize
+			pos.x = PickUpBlock.GridP.x * BlockSize.x
+			pos.y = PickUpBlock.GridP.y * BlockSize.y
+			PickUpBlock.set_pos(pos)
 		DrosteMove = false
 		DrosteRoom = -1
 
