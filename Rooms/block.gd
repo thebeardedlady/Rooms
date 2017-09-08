@@ -20,8 +20,9 @@ func _ready():
 func _process(delta):
 	update()
 
+#TODO(ian): After recording a trailer, reduce the last number to 2
 func _draw():
-	DrawRoom(RoomIndex,Vector2(0,0),BoundingBox.size,Rooms[RoomIndex].RoomColor,2)
+	DrawRoom(RoomIndex,Vector2(0,0),BoundingBox.size,Rooms[RoomIndex].RoomColor,3)
 
 func DrawRoom(index,pos,size,color,num):
 	color.r *= ColorMod.x
@@ -55,11 +56,11 @@ func DrawRoom(index,pos,size,color,num):
 		if(numconnections > 0):
 			var linecolor
 			if(numconnections == 1):
-				if(PresentRoom.NumConnections(Rooms[Rooms[index].North[0][0]].South) == 1):
-					linecolor = Color(0,0,0)
-					hasexit = true
-				else:
-					linecolor = Color(0.5,0.5,0.5)
+				#if(PresentRoom.NumConnections(Rooms[Rooms[index].North[0][0]].South) == 1):
+				linecolor = Color(0,0,0)
+				hasexit = true
+				#else:
+				#	linecolor = Color(0.5,0.5,0.5)
 			else:
 				linecolor = Color(0.5,0.5,0.5)
 			var p = pos
@@ -73,11 +74,11 @@ func DrawRoom(index,pos,size,color,num):
 		if(numconnections > 0):
 			var linecolor
 			if(numconnections == 1):
-				if(PresentRoom.NumConnections(Rooms[Rooms[index].West[0][0]].East) == 1):
-					linecolor = Color(0,0,0)
-					hasexit = true
-				else:
-					linecolor = Color(0.5,0.5,0.5)
+				#if(PresentRoom.NumConnections(Rooms[Rooms[index].West[0][0]].East) == 1):
+				linecolor = Color(0,0,0)
+				hasexit = true
+				#else:
+				#	linecolor = Color(0.5,0.5,0.5)
 			else:
 				linecolor = Color(0.5,0.5,0.5)
 			var p = pos
@@ -91,11 +92,11 @@ func DrawRoom(index,pos,size,color,num):
 		if(numconnections > 0):
 			var linecolor
 			if(numconnections == 1):
-				if(PresentRoom.NumConnections(Rooms[Rooms[index].South[0][0]].North) == 1):
-					linecolor = Color(0,0,0)
-					hasexit = true
-				else:
-					linecolor = Color(0.5,0.5,0.5)
+				#if(PresentRoom.NumConnections(Rooms[Rooms[index].South[0][0]].North) == 1):
+				linecolor = Color(0,0,0)
+				hasexit = true
+				#else:
+				#	linecolor = Color(0.5,0.5,0.5)
 			else:
 				linecolor = Color(0.5,0.5,0.5)
 			var p = pos + ((size-linegirth) * 0.5)
@@ -108,11 +109,11 @@ func DrawRoom(index,pos,size,color,num):
 		if(numconnections > 0):
 			var linecolor
 			if(numconnections == 1):
-				if(PresentRoom.NumConnections(Rooms[Rooms[index].East[0][0]].West) == 1):
-					linecolor = Color(0,0,0)
-					hasexit = true
-				else:
-					linecolor = Color(0.5,0.5,0.5)
+				#if(PresentRoom.NumConnections(Rooms[Rooms[index].East[0][0]].West) == 1):
+				linecolor = Color(0,0,0)
+				hasexit = true
+				#else:
+				#	linecolor = Color(0.5,0.5,0.5)
 			else:
 				linecolor = Color(0.5,0.5,0.5)
 			var p = pos + ((size-linegirth) * 0.5)
@@ -123,7 +124,8 @@ func DrawRoom(index,pos,size,color,num):
 	if(hasexit):
 		draw_rect(Rect2(pos+(size-linegirth)*0.5,linegirth),Color(0,0,0))
 	
-	if(num > 0):
+	#TODO(ian): After making a trailer, change this to > not >=
+	if(num >= 0):
 		if(index == 8):
 			var p = pos + Vector2(0.5*size.x,0.75*size.y)
 			p -= Vector2(0.25*borderdim.x,0.5*borderdim.y)
@@ -132,12 +134,11 @@ func DrawRoom(index,pos,size,color,num):
 			p += Vector2(-0.5*borderdim.x,0.5*borderdim.y)
 			size = Vector2(1.5*borderdim.x,0.5*borderdim.y)
 			draw_rect(Rect2(p,size),bordercolor)
-		if(index == 9):
-			var p = pos + Vector2(0.75*size.x,borderdim.y)
+		if(index == 5):
+			var p = pos + Vector2(0.75*size.x,1.5*borderdim.y)
 			p -= Vector2(0.333333*borderdim.x,0)
 			var size = Vector2(0.666666*borderdim.x,borderdim.y)
 			draw_rect(Rect2(p,size),bordercolor)
-	
 		
 		draw_line(pos,pos+Vector2(size.x,0),Color(0,0,0))
 		draw_line(pos,pos+Vector2(0,size.x),Color(0,0,0))
@@ -156,7 +157,3 @@ func DrawRoom(index,pos,size,color,num):
 				markcolor.g *= 0.9
 				markcolor.b *= 0.9
 				DrawRoom(block.RoomIndex,bpos,borderdim,markcolor,num-1)
-				#draw_line(bpos,bpos+Vector2(0,borderdim.y),Color(0,0,0))
-				#draw_line(bpos,bpos+Vector2(borderdim.x,0),Color(0,0,0))
-				#draw_line(bpos+Vector2(borderdim.x,0),bpos+borderdim,Color(0,0,0))
-				#draw_line(bpos+Vector2(0,borderdim.y),bpos+borderdim,Color(0,0,0))

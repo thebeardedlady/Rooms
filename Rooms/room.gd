@@ -80,11 +80,11 @@ func DrawRoom(index,pos,size,color):
 		if(numconnections > 0):
 			var linecolor
 			if(numconnections == 1):
-				if(NumConnections(Rooms[Rooms[index].North[0][0]].South) == 1):
-					linecolor = Color(0,0,0)
-					hasexit = true
-				else:
-					linecolor = Color(0.5,0.5,0.5)
+				#if(NumConnections(Rooms[Rooms[index].North[0][0]].South) == 1):
+				linecolor = Color(0,0,0)
+				hasexit = true
+				#else:
+				#	linecolor = Color(0.5,0.5,0.5)
 			else:
 				linecolor = Color(0.5,0.5,0.5)
 			var p = pos
@@ -98,11 +98,11 @@ func DrawRoom(index,pos,size,color):
 		if(numconnections > 0):
 			var linecolor
 			if(numconnections == 1):
-				if(NumConnections(Rooms[Rooms[index].West[0][0]].East) == 1):
-					linecolor = Color(0,0,0)
-					hasexit = true
-				else:
-					linecolor = Color(0.5,0.5,0.5)
+				#if(NumConnections(Rooms[Rooms[index].West[0][0]].East) == 1):
+				linecolor = Color(0,0,0)
+				hasexit = true
+				#else:
+				#	linecolor = Color(0.5,0.5,0.5)
 			else:
 				linecolor = Color(0.5,0.5,0.5)
 			var p = pos
@@ -116,11 +116,11 @@ func DrawRoom(index,pos,size,color):
 		if(numconnections > 0):
 			var linecolor
 			if(numconnections == 1):
-				if(NumConnections(Rooms[Rooms[index].South[0][0]].North) == 1):
-					linecolor = Color(0,0,0)
-					hasexit = true
-				else:
-					linecolor = Color(0.5,0.5,0.5)
+				#if(NumConnections(Rooms[Rooms[index].South[0][0]].North) == 1):
+				linecolor = Color(0,0,0)
+				hasexit = true
+				#else:
+				#	linecolor = Color(0.5,0.5,0.5)
 			else:
 				linecolor = Color(0.5,0.5,0.5)
 			var p = pos + ((size-linegirth) * 0.5)
@@ -133,11 +133,11 @@ func DrawRoom(index,pos,size,color):
 		if(numconnections > 0):
 			var linecolor
 			if(numconnections == 1):
-				if(NumConnections(Rooms[Rooms[index].East[0][0]].West) == 1):
-					linecolor = Color(0,0,0)
-					hasexit = true
-				else:
-					linecolor = Color(0.5,0.5,0.5)
+				#if(NumConnections(Rooms[Rooms[index].East[0][0]].West) == 1):
+				linecolor = Color(0,0,0)
+				hasexit = true
+				#else:
+				#	linecolor = Color(0.5,0.5,0.5)
 			else:
 				linecolor = Color(0.5,0.5,0.5)
 			var p = pos + ((size-linegirth) * 0.5)
@@ -276,14 +276,20 @@ func EraseEdgeEast(blockindex,roomindex):
 		Rooms[blockindex].East.erase(value)
 
 
+func OtherConnected(way,roomindex):
+	for entry in way:
+		if(entry[0] != roomindex):
+			return true
+	return false
+
 func ComputeEdgeBlocks():
 	for roomblocks in BlocksArray:
 		var roomindex = roomblocks[0].RoomIndex
 		
-		var connectedNorth = (NumConnections(North)==1)
-		var connectedWest = (NumConnections(West)==1)
-		var connectedSouth = (NumConnections(South)==1)
-		var connectedEast = (NumConnections(East)==1)
+		var connectedNorth = (NumConnections(North)>0)
+		var connectedWest = (NumConnections(West)>0)
+		var connectedSouth = (NumConnections(South)>0)
+		var connectedEast = (NumConnections(East)>0)
 		
 		
 		var roomtype = Rooms[roomindex].Type
@@ -295,36 +301,60 @@ func ComputeEdgeBlocks():
 		for block in roomblocks:
 			if(block.GridP.y == 0):
 				if((roomtype&8)>>3 == 1 and connectedNorth):
-					var northBlock = Rooms[North[0][0]].BlocksGrid[block.GridP.x][BlocksGridSize.y-1]
-					if(typeof(northBlock) == typeof(block)):
-						var hasdoor = (Rooms[northBlock.RoomIndex].Type&2)>>1
-						if(hasdoor == 1):
-							addNorth.append([northBlock.RoomIndex,-Index])
+					var connectedRooms = []
+					for entry in North:
+						if(not connectedRooms.has(entry[0])):
+							connectedRooms.append(entry[0])
+					for roomNumber in connectedRooms:
+						var northBlock = Rooms[roomNumber].BlocksGrid[block.GridP.x][BlocksGridSize.y-1]
+						if(typeof(northBlock) == typeof(block)):
+							var hasdoor = (Rooms[northBlock.RoomIndex].Type&2)>>1
+							if(hasdoor == 1):
+								#if(not OtherConnected(Rooms[northBlock.RoomIndex].South,block.RoomIndex)):
+								addNorth.append([northBlock.RoomIndex,-Index])
 			
 			
 			if(block.GridP.x == 0):
 				if((roomtype&4)>>2 == 1 and connectedWest):
-					var westBlock = Rooms[West[0][0]].BlocksGrid[BlocksGridSize.x-1][block.GridP.y]
-					if(typeof(westBlock) == typeof(block)):
-						var hasdoor = (Rooms[westBlock.RoomIndex].Type&1)>>0
-						if(hasdoor == 1):
-							addWest.append([westBlock.RoomIndex,-Index])
+					var connectedRooms = []
+					for entry in West:
+						if(not connectedRooms.has(entry[0])):
+							connectedRooms.append(entry[0])
+					for roomNumber in connectedRooms:
+						var westBlock = Rooms[roomNumber].BlocksGrid[BlocksGridSize.x-1][block.GridP.y]
+						if(typeof(westBlock) == typeof(block)):
+							var hasdoor = (Rooms[westBlock.RoomIndex].Type&1)>>0
+							if(hasdoor == 1):
+								#if(not OtherConnected(Rooms[westBlock.RoomIndex].East,block.RoomIndex)):
+								addWest.append([westBlock.RoomIndex,-Index])
 			
 			if(block.GridP.y == BlocksGridSize.y-1):
 				if((roomtype&2)>>1 == 1 and connectedSouth):
-					var southBlock = Rooms[South[0][0]].BlocksGrid[block.GridP.x][0]
-					if(typeof(southBlock) == typeof(block)):
-						var hasdoor = (Rooms[southBlock.RoomIndex].Type&8)>>3
-						if(hasdoor == 1):
-							addSouth.append([southBlock.RoomIndex,-Index])
+					var connectedRooms = []
+					for entry in South:
+						if(not connectedRooms.has(entry[0])):
+							connectedRooms.append(entry[0])
+					for roomNumber in connectedRooms:
+						var southBlock = Rooms[roomNumber].BlocksGrid[block.GridP.x][0]
+						if(typeof(southBlock) == typeof(block)):
+							var hasdoor = (Rooms[southBlock.RoomIndex].Type&8)>>3
+							if(hasdoor == 1):
+								#if(not OtherConnected(Rooms[southBlock.RoomIndex].North,block.RoomIndex)):
+								addSouth.append([southBlock.RoomIndex,-Index])
 			
 			if(block.GridP.x == BlocksGridSize.x-1):
 				if((roomtype&1)>>0 == 1 and connectedEast):
-					var eastBlock = Rooms[East[0][0]].BlocksGrid[0][block.GridP.y]
-					if(typeof(eastBlock) == typeof(block)):
-						var hasdoor = (Rooms[eastBlock.RoomIndex].Type&4)>>2
-						if(hasdoor == 1):
-							addEast.append([eastBlock.RoomIndex,-Index])
+					var connectedRooms = []
+					for entry in East:
+						if(not connectedRooms.has(entry[0])):
+							connectedRooms.append(entry[0])
+					for roomNumber in connectedRooms:
+						var eastBlock = Rooms[roomNumber].BlocksGrid[0][block.GridP.y]
+						if(typeof(eastBlock) == typeof(block)):
+							var hasdoor = (Rooms[eastBlock.RoomIndex].Type&4)>>2
+							if(hasdoor == 1):
+								#if(not OtherConnected(Rooms[eastBlock.RoomIndex].West,block.RoomIndex)):
+								addEast.append([eastBlock.RoomIndex,-Index])
 		
 		EraseConnections(roomindex,-Index)
 		for entry in addNorth:
