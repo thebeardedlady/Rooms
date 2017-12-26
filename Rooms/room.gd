@@ -3,6 +3,7 @@ extends Node2D
 
 var Type = 0
 var Index = -1
+var Orientation = 3
 var North = []
 var West = []
 var South = []
@@ -11,10 +12,12 @@ var BlocksGrid = []
 var BlocksArray = []
 var RoomColor = Color()
 var BlockSize = Vector2()
+var Offset
 onready var BlocksGridSize = get_node("../").BlocksGridSize 
 onready var RoomSize = get_node("../").RoomSize
 onready var Level = get_node("../")
 onready var Rooms = get_node("../").Rooms
+
 
 func _ready():
 	BlockSize.x = RoomSize.x/BlocksGridSize.x
@@ -45,7 +48,7 @@ func _ready():
 			BlocksGrid[BlocksGridSize.x-1][y] = 0
 
 func _draw():
-	DrawRoom(Index,Vector2(0,0),RoomSize,RoomColor)
+	DrawRoom(Index,RoomSize * -0.5,RoomSize,RoomColor)
 
 func _process(delta):
 	update()
@@ -62,6 +65,7 @@ func DrawRoom(index,pos,size,color):
 	borderdim.x /= BlocksGridSize.x
 	borderdim.y /= BlocksGridSize.y
 	
+	var move = RoomSize * 0.5
 	
 	draw_rect(Rect2(pos,size),color)
 	draw_rect(Rect2(pos,borderdim),bordercolor)
@@ -80,11 +84,8 @@ func DrawRoom(index,pos,size,color):
 		if(numconnections > 0):
 			var linecolor
 			if(numconnections == 1):
-				#if(NumConnections(Rooms[Rooms[index].North[0][0]].South) == 1):
 				linecolor = Color(0,0,0)
 				hasexit = true
-				#else:
-				#	linecolor = Color(0.5,0.5,0.5)
 			else:
 				linecolor = Color(0.5,0.5,0.5)
 			var p = pos
@@ -98,11 +99,8 @@ func DrawRoom(index,pos,size,color):
 		if(numconnections > 0):
 			var linecolor
 			if(numconnections == 1):
-				#if(NumConnections(Rooms[Rooms[index].West[0][0]].East) == 1):
 				linecolor = Color(0,0,0)
 				hasexit = true
-				#else:
-				#	linecolor = Color(0.5,0.5,0.5)
 			else:
 				linecolor = Color(0.5,0.5,0.5)
 			var p = pos
@@ -116,11 +114,8 @@ func DrawRoom(index,pos,size,color):
 		if(numconnections > 0):
 			var linecolor
 			if(numconnections == 1):
-				#if(NumConnections(Rooms[Rooms[index].South[0][0]].North) == 1):
 				linecolor = Color(0,0,0)
 				hasexit = true
-				#else:
-				#	linecolor = Color(0.5,0.5,0.5)
 			else:
 				linecolor = Color(0.5,0.5,0.5)
 			var p = pos + ((size-linegirth) * 0.5)
@@ -133,11 +128,8 @@ func DrawRoom(index,pos,size,color):
 		if(numconnections > 0):
 			var linecolor
 			if(numconnections == 1):
-				#if(NumConnections(Rooms[Rooms[index].East[0][0]].West) == 1):
 				linecolor = Color(0,0,0)
 				hasexit = true
-				#else:
-				#	linecolor = Color(0.5,0.5,0.5)
 			else:
 				linecolor = Color(0.5,0.5,0.5)
 			var p = pos + ((size-linegirth) * 0.5)
@@ -154,10 +146,13 @@ func NumConnections(door):
 	if(door.size() == 0):
 		return 0
 	else:
-		var temp = door[0][0]
+		var temp = [door[0][0],door[0][2]]
 		for i in range(door.size()):
-			if(door[i][0] != temp):
+			if(door[i][0] != temp[0]):
 				return 2
+			else:
+				if(door[i][2] != temp[1]):
+					return 2
 		return 1
 	
 
@@ -174,15 +169,26 @@ func InitBlocks(string):
 		BlocksGrid[pos.x][pos.y].RoomIndex = roomindex
 		BlocksGrid[pos.x][pos.y].Index = i
 		BlocksGrid[pos.x][pos.y].GridP = pos
-		BlocksGrid[pos.x][pos.y].BoundingBox.pos.x = pos.x * BlockSize.x
-		BlocksGrid[pos.x][pos.y].BoundingBox.pos.y = pos.y * BlockSize.y
+		#TODO(ian): set up orientation here
+		BlocksGrid[pos.x][pos.y].Orientation = split[3].to_int()
+		if(BlocksGrid[pos.x][pos.y].Orientation == 3):
+			BlocksGrid[pos.x][pos.y].set_rotd(0)
+		elif(BlocksGrid[pos.x][pos.y].Orientation == 2):
+			BlocksGrid[pos.x][pos.y].set_rotd(90)
+		elif(BlocksGrid[pos.x][pos.y].Orientation == 1):
+			BlocksGrid[pos.x][pos.y].set_rotd(180)
+		else:
+			BlocksGrid[pos.x][pos.y].set_rotd(270)
+		#NOTE(ian): Maybe don't need BoundingBox anymore
+		BlocksGrid[pos.x][pos.y].BoundingBox.pos.x = (pos.x - 0.5 * (BlocksGridSize.x - 1)) * BlockSize.x
+		BlocksGrid[pos.x][pos.y].BoundingBox.pos.y = (pos.y - 0.5 * (BlocksGridSize.y - 1)) * BlockSize.y
 		BlocksGrid[pos.x][pos.y].set_pos(BlocksGrid[pos.x][pos.y].BoundingBox.pos)
 		BlocksGrid[pos.x][pos.y].set_z(10)
 		BlocksGrid[pos.x][pos.y].BoundingBox.size = BlockSize
 		var index = -1
-		for i in range(BlocksArray.size()):
-			if(BlocksArray[i][0].RoomIndex == BlocksGrid[pos.x][pos.y].RoomIndex):
-				index = i
+		for j in range(BlocksArray.size()):
+			if(BlocksArray[j][0].RoomIndex == BlocksGrid[pos.x][pos.y].RoomIndex):
+				index = j
 		if(index == -1):
 			BlocksArray.append([BlocksGrid[pos.x][pos.y]])
 		else:
@@ -190,6 +196,7 @@ func InitBlocks(string):
 		add_child(BlocksGrid[pos.x][pos.y])
 		i += 1
 		
+		#TODO(ian): Maybe we don't need this call
 		ComputeMiddleBlocks()
 
 
@@ -300,61 +307,469 @@ func ComputeEdgeBlocks():
 		
 		for block in roomblocks:
 			if(block.GridP.y == 0):
-				if((roomtype&8)>>3 == 1 and connectedNorth):
-					var connectedRooms = []
-					for entry in North:
-						if(not connectedRooms.has(entry[0])):
-							connectedRooms.append(entry[0])
-					for roomNumber in connectedRooms:
-						var northBlock = Rooms[roomNumber].BlocksGrid[block.GridP.x][BlocksGridSize.y-1]
-						if(typeof(northBlock) == typeof(block)):
-							var hasdoor = (Rooms[northBlock.RoomIndex].Type&2)>>1
-							if(hasdoor == 1):
-								#if(not OtherConnected(Rooms[northBlock.RoomIndex].South,block.RoomIndex)):
-								addNorth.append([northBlock.RoomIndex,-Index])
+				if(connectedNorth):
+					var pointing
+					var roomDoor
+					if(block.Orientation == 3):
+						pointing = (roomtype&8)>>3
+						roomDoor = 3
+					elif(block.Orientation == 2):
+						pointing = (roomtype&1)>>0
+						roomDoor = 0
+					elif(block.Orientation == 1):
+						pointing = (roomtype&2)>>1
+						roomDoor = 1
+					else:
+						pointing = (roomtype&4)>>2
+						roomDoor = 2
+					if(pointing == 1):
+						var connectedRooms = []
+						var roomDoors = []
+						for entry in North:
+							if(not connectedRooms.has(entry[0])):
+								connectedRooms.append(entry[0])
+								roomDoors.append(entry[2])
+						for i in range(connectedRooms.size()):
+							var northBlock
+							if(roomDoors[i] == 3):
+								northBlock = Rooms[connectedRooms[i]].BlocksGrid[BlocksGridSize.x - block.GridP.x - 1][0]
+							elif(roomDoors[i] == 2):
+								northBlock = Rooms[connectedRooms[i]].BlocksGrid[0][block.GridP.x]
+							elif(roomDoors[i] == 1):
+								northBlock = Rooms[connectedRooms[i]].BlocksGrid[block.GridP.x][BlocksGridSize.y-1]
+							else:
+								northBlock = Rooms[connectedRooms[i]].BlocksGrid[BlocksGridSize.x - 1][BlocksGridSize.x - block.GridP.x - 1]
+							if(typeof(northBlock) == typeof(block)):
+								var index = northBlock.RoomIndex
+								var orientation = northBlock.Orientation
+								var hasdoor
+								var whichdoor
+								if(roomDoors[i] == 3): #dway is 1 south
+									if(orientation == 3): 
+										#North
+										hasdoor = (Rooms[index].Type&8)>>3
+										whichdoor = 3
+									elif(orientation == 2):
+										#East
+										hasdoor = (Rooms[index].Type&1)>>0
+										whichdoor = 0
+									elif(orientation == 1):
+										#South
+										hasdoor = (Rooms[index].Type&2)>>1
+										whichdoor = 1
+									else:
+										#West
+										hasdoor = (Rooms[index].Type&4)>>2
+										whichdoor = 2
+								elif(roomDoors[i] == 2): #dway is 0 East
+									if(orientation == 3):
+										#West
+										hasdoor = (Rooms[index].Type&4)>>2
+										whichdoor = 2
+									elif(orientation == 2):
+										#North
+										hasdoor = (Rooms[index].Type&8)>>3
+										whichdoor = 3
+									elif(orientation == 1):
+										#East
+										hasdoor = (Rooms[index].Type&1)>>0
+										whichdoor = 0
+									else:
+										#South
+										hasdoor = (Rooms[index].Type&2)>>1
+										whichdoor = 1
+								elif(roomDoors[i] == 1): #dway is 3 North
+									if(orientation == 3):
+										#South
+										hasdoor = (Rooms[index].Type&2)>>1
+										whichdoor = 1
+									elif(orientation == 2):
+										#West
+										hasdoor = (Rooms[index].Type&4)>>2
+										whichdoor = 2
+									elif(orientation == 1):
+										#North
+										hasdoor = (Rooms[index].Type&8)>>3
+										whichdoor = 3
+									else:
+										#East
+										hasdoor = (Rooms[index].Type&1)>>0
+										whichdoor = 0
+								else: #dway is 2 West
+									if(orientation == 3):
+										#East
+										hasdoor = (Rooms[index].Type&1)>>0
+										whichdoor = 0
+									elif(orientation == 2):
+										#South
+										hasdoor = (Rooms[index].Type&2)>>1
+										whichdoor = 1
+									elif(orientation == 1):
+										#West
+										hasdoor = (Rooms[index].Type&4)>>2
+										whichdoor = 2
+									else:
+										#North
+										hasdoor = (Rooms[index].Type&8)>>3
+										whichdoor = 3
+								if(hasdoor == 1):
+									if(roomDoor == 3):
+										addNorth.append([index,-Index,whichdoor])
+									elif(roomDoor == 2):
+										addWest.append([index,-Index,whichdoor])
+									elif(roomDoor == 1):
+										addSouth.append([index,-Index,whichdoor])
+									else:
+										addEast.append([index,-Index,whichdoor])
 			
 			
 			if(block.GridP.x == 0):
-				if((roomtype&4)>>2 == 1 and connectedWest):
-					var connectedRooms = []
-					for entry in West:
-						if(not connectedRooms.has(entry[0])):
-							connectedRooms.append(entry[0])
-					for roomNumber in connectedRooms:
-						var westBlock = Rooms[roomNumber].BlocksGrid[BlocksGridSize.x-1][block.GridP.y]
-						if(typeof(westBlock) == typeof(block)):
-							var hasdoor = (Rooms[westBlock.RoomIndex].Type&1)>>0
-							if(hasdoor == 1):
-								#if(not OtherConnected(Rooms[westBlock.RoomIndex].East,block.RoomIndex)):
-								addWest.append([westBlock.RoomIndex,-Index])
+				if(connectedWest):
+					var pointing
+					var roomDoor
+					if(block.Orientation == 3):
+						pointing = (roomtype&4)>>2
+						roomDoor = 2
+					elif(block.Orientation == 2):
+						pointing = (roomtype&8)>>3
+						roomDoor = 3
+					elif(block.Orientation == 1):
+						pointing = (roomtype&1)>>0
+						roomDoor = 0
+					else:
+						pointing = (roomtype&2)>>1
+						roomDoor = 1
+					if(pointing == 1):
+						var connectedRooms = []
+						var roomDoors = []
+						for entry in West:
+							if(not connectedRooms.has(entry[0])):
+								connectedRooms.append(entry[0])
+								roomDoors.append(entry[2])
+						for i in range(connectedRooms.size()):
+							var westBlock
+							if(roomDoors[i] == 3):
+								westBlock = Rooms[connectedRooms[i]].BlocksGrid[block.GridP.y][0]
+							elif(roomDoors[i] == 2):
+								westBlock = Rooms[connectedRooms[i]].BlocksGrid[0][BlocksGridSize.y - block.GridP.y - 1]
+							elif(roomDoors[i] == 1):
+								westBlock = Rooms[connectedRooms[i]].BlocksGrid[BlocksGridSize.y - block.GridP.y - 1][BlocksGridSize.y-1]
+							else:
+								westBlock = Rooms[connectedRooms[i]].BlocksGrid[BlocksGridSize.x-1][block.GridP.y]
+							if(typeof(westBlock) == typeof(block)):
+								var index = westBlock.RoomIndex
+								var orientation = westBlock.Orientation
+								var hasdoor
+								var whichdoor
+								if(roomDoors[i] == 3): #dway is 1 south
+									if(orientation == 3): 
+										#North
+										hasdoor = (Rooms[index].Type&8)>>3
+										whichdoor = 3
+									elif(orientation == 2):
+										#East
+										hasdoor = (Rooms[index].Type&1)>>0
+										whichdoor = 0
+									elif(orientation == 1):
+										#South
+										hasdoor = (Rooms[index].Type&2)>>1
+										whichdoor = 1
+									else:
+										#West
+										hasdoor = (Rooms[index].Type&4)>>2
+										whichdoor = 2
+								elif(roomDoors[i] == 2): #dway is 0 East
+									if(orientation == 3):
+										#West
+										hasdoor = (Rooms[index].Type&4)>>2
+										whichdoor = 2
+									elif(orientation == 2):
+										#North
+										hasdoor = (Rooms[index].Type&8)>>3
+										whichdoor = 3
+									elif(orientation == 1):
+										#East
+										hasdoor = (Rooms[index].Type&1)>>0
+										whichdoor = 0
+									else:
+										#South
+										hasdoor = (Rooms[index].Type&2)>>1
+										whichdoor = 1
+								elif(roomDoors[i] == 1): #dway is 3 North
+									if(orientation == 3):
+										#South
+										hasdoor = (Rooms[index].Type&2)>>1
+										whichdoor = 1
+									elif(orientation == 2):
+										#West
+										hasdoor = (Rooms[index].Type&4)>>2
+										whichdoor = 2
+									elif(orientation == 1):
+										#North
+										hasdoor = (Rooms[index].Type&8)>>3
+										whichdoor = 3
+									else:
+										#East
+										hasdoor = (Rooms[index].Type&1)>>0
+										whichdoor = 0
+								else: #dway is 2 West
+									if(orientation == 3):
+										#East
+										hasdoor = (Rooms[index].Type&1)>>0
+										whichdoor = 0
+									elif(orientation == 2):
+										#South
+										hasdoor = (Rooms[index].Type&2)>>1
+										whichdoor = 1
+									elif(orientation == 1):
+										#West
+										hasdoor = (Rooms[index].Type&4)>>2
+										whichdoor = 2
+									else:
+										#North
+										hasdoor = (Rooms[index].Type&8)>>3
+										whichdoor = 3
+								if(hasdoor == 1):
+									if(roomDoor == 3):
+										addNorth.append([index,-Index,whichdoor])
+									elif(roomDoor == 2):
+										addWest.append([index,-Index,whichdoor])
+									elif(roomDoor == 1):
+										addSouth.append([index,-Index,whichdoor])
+									else:
+										addEast.append([index,-Index,whichdoor])
 			
 			if(block.GridP.y == BlocksGridSize.y-1):
-				if((roomtype&2)>>1 == 1 and connectedSouth):
-					var connectedRooms = []
-					for entry in South:
-						if(not connectedRooms.has(entry[0])):
-							connectedRooms.append(entry[0])
-					for roomNumber in connectedRooms:
-						var southBlock = Rooms[roomNumber].BlocksGrid[block.GridP.x][0]
-						if(typeof(southBlock) == typeof(block)):
-							var hasdoor = (Rooms[southBlock.RoomIndex].Type&8)>>3
-							if(hasdoor == 1):
-								#if(not OtherConnected(Rooms[southBlock.RoomIndex].North,block.RoomIndex)):
-								addSouth.append([southBlock.RoomIndex,-Index])
+				if(connectedSouth):
+					var pointing
+					var roomDoor
+					if(block.Orientation == 3):
+						pointing = (roomtype&2)>>1
+						roomDoor = 1
+					elif(block.Orientation == 2):
+						pointing = (roomtype&4)>>2
+						roomDoor = 2
+					elif(block.Orientation == 1):
+						pointing = (roomtype&8)>>3
+						roomDoor = 3
+					else:
+						pointing = (roomtype&1)>>0
+						roomDoor = 0
+					if(pointing == 1):
+						var connectedRooms = []
+						var roomDoors = []
+						for entry in South:
+							if(not connectedRooms.has(entry[0])):
+								connectedRooms.append(entry[0])
+								roomDoors.append(entry[2])
+						for i in range(connectedRooms.size()):
+							var southBlock
+							if(roomDoors[i] == 3):
+								southBlock = Rooms[connectedRooms[i]].BlocksGrid[block.GridP.x][0]
+							elif(roomDoors[i] == 2):
+								southBlock = Rooms[connectedRooms[i]].BlocksGrid[0][BlocksGridSize.x - block.GridP.x - 1]
+							elif(roomDoors[i] == 1):
+								southBlock = Rooms[connectedRooms[i]].BlocksGrid[BlocksGridSize.x - block.GridP.x - 1][BlocksGridSize.y - 1]
+							else:
+								southBlock = Rooms[connectedRooms[i]].BlocksGrid[BlocksGridSize.x - 1][block.GridP.x]
+							if(typeof(southBlock) == typeof(block)):
+								var index = southBlock.RoomIndex
+								var orientation = southBlock.Orientation
+								var hasdoor
+								var whichdoor
+								if(roomDoors[i] == 3): #dway is 1 south
+									if(orientation == 3): 
+										#North
+										hasdoor = (Rooms[index].Type&8)>>3
+										whichdoor = 3
+									elif(orientation == 2):
+										#East
+										hasdoor = (Rooms[index].Type&1)>>0
+										whichdoor = 0
+									elif(orientation == 1):
+										#South
+										hasdoor = (Rooms[index].Type&2)>>1
+										whichdoor = 1
+									else:
+										#West
+										hasdoor = (Rooms[index].Type&4)>>2
+										whichdoor = 2
+								elif(roomDoors[i] == 2): #dway is 0 East
+									if(orientation == 3):
+										#West
+										hasdoor = (Rooms[index].Type&4)>>2
+										whichdoor = 2
+									elif(orientation == 2):
+										#North
+										hasdoor = (Rooms[index].Type&8)>>3
+										whichdoor = 3
+									elif(orientation == 1):
+										#East
+										hasdoor = (Rooms[index].Type&1)>>0
+										whichdoor = 0
+									else:
+										#South
+										hasdoor = (Rooms[index].Type&2)>>1
+										whichdoor = 1
+								elif(roomDoors[i] == 1): #dway is 3 North
+									if(orientation == 3):
+										#South
+										hasdoor = (Rooms[index].Type&2)>>1
+										whichdoor = 1
+									elif(orientation == 2):
+										#West
+										hasdoor = (Rooms[index].Type&4)>>2
+										whichdoor = 2
+									elif(orientation == 1):
+										#North
+										hasdoor = (Rooms[index].Type&8)>>3
+										whichdoor = 3
+									else:
+										#East
+										hasdoor = (Rooms[index].Type&1)>>0
+										whichdoor = 0
+								else: #dway is 2 West
+									if(orientation == 3):
+										#East
+										hasdoor = (Rooms[index].Type&1)>>0
+										whichdoor = 0
+									elif(orientation == 2):
+										#South
+										hasdoor = (Rooms[index].Type&2)>>1
+										whichdoor = 1
+									elif(orientation == 1):
+										#West
+										hasdoor = (Rooms[index].Type&4)>>2
+										whichdoor = 2
+									else:
+										#North
+										hasdoor = (Rooms[index].Type&8)>>3
+										whichdoor = 3
+								if(hasdoor == 1):
+									if(roomDoor == 3):
+										addNorth.append([index,-Index,whichdoor])
+									elif(roomDoor == 2):
+										addWest.append([index,-Index,whichdoor])
+									elif(roomDoor == 1):
+										addSouth.append([index,-Index,whichdoor])
+									else:
+										addEast.append([index,-Index,whichdoor])
 			
 			if(block.GridP.x == BlocksGridSize.x-1):
-				if((roomtype&1)>>0 == 1 and connectedEast):
-					var connectedRooms = []
-					for entry in East:
-						if(not connectedRooms.has(entry[0])):
-							connectedRooms.append(entry[0])
-					for roomNumber in connectedRooms:
-						var eastBlock = Rooms[roomNumber].BlocksGrid[0][block.GridP.y]
-						if(typeof(eastBlock) == typeof(block)):
-							var hasdoor = (Rooms[eastBlock.RoomIndex].Type&4)>>2
-							if(hasdoor == 1):
-								#if(not OtherConnected(Rooms[eastBlock.RoomIndex].West,block.RoomIndex)):
-								addEast.append([eastBlock.RoomIndex,-Index])
+				if(connectedEast):
+					var pointing
+					var roomDoor
+					if(block.Orientation == 3):
+						pointing = (roomtype&1)>>0
+						roomDoor = 0
+					elif(block.Orientation == 2):
+						pointing = (roomtype&2)>>1
+						roomDoor = 1
+					elif(block.Orientation == 1):
+						pointing = (roomtype&4)>>2
+						roomDoor = 2
+					else:
+						pointing = (roomtype&8)>>3
+						roomDoor = 3
+					if(pointing == 1):
+						var connectedRooms = []
+						var roomDoors = []
+						for entry in East:
+							if(not connectedRooms.has(entry[0])):
+								connectedRooms.append(entry[0])
+								roomDoors.append(entry[2])
+						for i in range(connectedRooms.size()):
+							var eastBlock
+							if(roomDoors[i] == 3):
+								eastBlock = Rooms[connectedRooms[i]].BlocksGrid[BlocksGridSize.y - block.GridP.y - 1][0]
+							elif(roomDoors[i] == 2):
+								eastBlock = Rooms[connectedRooms[i]].BlocksGrid[0][block.GridP.y]
+							elif(roomDoors[i] == 1):
+								eastBlock = Rooms[connectedRooms[i]].BlocksGrid[block.GridP.y][BlocksGridSize.y-1]
+							else:
+								eastBlock = Rooms[connectedRooms[i]].BlocksGrid[BlocksGridSize.x-1][BlocksGridSize.y - block.GridP.y - 1]
+							if(typeof(eastBlock) == typeof(block)):
+								var index = eastBlock.RoomIndex
+								var orientation = eastBlock.Orientation
+								var hasdoor
+								var whichdoor
+								if(roomDoors[i] == 3): #dway is 1 south
+									if(orientation == 3): 
+										#North
+										hasdoor = (Rooms[index].Type&8)>>3
+										whichdoor = 3
+									elif(orientation == 2):
+										#East
+										hasdoor = (Rooms[index].Type&1)>>0
+										whichdoor = 0
+									elif(orientation == 1):
+										#South
+										hasdoor = (Rooms[index].Type&2)>>1
+										whichdoor = 1
+									else:
+										#West
+										hasdoor = (Rooms[index].Type&4)>>2
+										whichdoor = 2
+								elif(roomDoors[i] == 2): #dway is 0 East
+									if(orientation == 3):
+										#West
+										hasdoor = (Rooms[index].Type&4)>>2
+										whichdoor = 2
+									elif(orientation == 2):
+										#North
+										hasdoor = (Rooms[index].Type&8)>>3
+										whichdoor = 3
+									elif(orientation == 1):
+										#East
+										hasdoor = (Rooms[index].Type&1)>>0
+										whichdoor = 0
+									else:
+										#South
+										hasdoor = (Rooms[index].Type&2)>>1
+										whichdoor = 1
+								elif(roomDoors[i] == 1): #dway is 3 North
+									if(orientation == 3):
+										#South
+										hasdoor = (Rooms[index].Type&2)>>1
+										whichdoor = 1
+									elif(orientation == 2):
+										#West
+										hasdoor = (Rooms[index].Type&4)>>2
+										whichdoor = 2
+									elif(orientation == 1):
+										#North
+										hasdoor = (Rooms[index].Type&8)>>3
+										whichdoor = 3
+									else:
+										#East
+										hasdoor = (Rooms[index].Type&1)>>0
+										whichdoor = 0
+								else: #dway is 2 West
+									if(orientation == 3):
+										#East
+										hasdoor = (Rooms[index].Type&1)>>0
+										whichdoor = 0
+									elif(orientation == 2):
+										#South
+										hasdoor = (Rooms[index].Type&2)>>1
+										whichdoor = 1
+									elif(orientation == 1):
+										#West
+										hasdoor = (Rooms[index].Type&4)>>2
+										whichdoor = 2
+									else:
+										#North
+										hasdoor = (Rooms[index].Type&8)>>3
+										whichdoor = 3
+								if(hasdoor == 1):
+									if(roomDoor == 3):
+										addNorth.append([index,-Index,whichdoor])
+									elif(roomDoor == 2):
+										addWest.append([index,-Index,whichdoor])
+									elif(roomDoor == 1):
+										addSouth.append([index,-Index,whichdoor])
+									else:
+										addEast.append([index,-Index,whichdoor])
 		
 		EraseConnections(roomindex,-Index)
 		for entry in addNorth:
@@ -384,37 +799,373 @@ func ComputeMiddleBlocks():
 		
 		for block in roomblocks:
 			if(hasNorth == 1):
-				var point = block.GridP + Vector2(0,-1)
+				var direction
+				var dway
+				if(block.Orientation == 3):
+					direction = Vector2(0,-1)
+					dway = 3
+				elif(block.Orientation == 2):
+					direction = Vector2(-1,0)
+					dway = 2
+				elif(block.Orientation == 1):
+					direction = Vector2(0,1)
+					dway = 1
+				else:
+					direction = Vector2(1,0)
+					dway = 0
+				var point = block.GridP + direction
 				if(rect.has_point(point)):
 					if(typeof(BlocksGrid[point.x][point.y]) == typeof(block)):
 						var index = BlocksGrid[point.x][point.y].RoomIndex
-						var hasdoor = (Rooms[index].Type&2)>>1
+						var orientation = BlocksGrid[point.x][point.y].Orientation
+						var hasdoor
+						var whichdoor
+						if(dway == 3):
+							if(orientation == 3):
+								#South
+								hasdoor = (Rooms[index].Type&2)>>1
+								whichdoor = 1
+							elif(orientation == 2):
+								#West
+								hasdoor = (Rooms[index].Type&4)>>2
+								whichdoor = 2
+							elif(orientation == 1):
+								#North
+								hasdoor = (Rooms[index].Type&8)>>3
+								whichdoor = 3
+							else:
+								#East
+								hasdoor = (Rooms[index].Type&1)>>0
+								whichdoor = 0
+						elif(dway == 2):
+							if(orientation == 3):
+								#East
+								hasdoor = (Rooms[index].Type&1)>>0
+								whichdoor = 0
+							elif(orientation == 2):
+								#South
+								hasdoor = (Rooms[index].Type&2)>>1
+								whichdoor = 1
+							elif(orientation == 1):
+								#West
+								hasdoor = (Rooms[index].Type&4)>>2
+								whichdoor = 2
+							else:
+								#North
+								hasdoor = (Rooms[index].Type&8)>>3
+								whichdoor = 3
+						elif(dway == 1):
+							if(orientation == 3):
+								#North
+								hasdoor = (Rooms[index].Type&8)>>3
+								whichdoor = 3
+							elif(orientation == 2):
+								#East
+								hasdoor = (Rooms[index].Type&1)>>0
+								whichdoor = 0
+							elif(orientation == 1):
+								#South
+								hasdoor = (Rooms[index].Type&2)>>1
+								whichdoor = 1
+							else:
+								#West
+								hasdoor = (Rooms[index].Type&4)>>2
+								whichdoor = 2
+						else:
+							if(orientation == 3):
+								#West
+								hasdoor = (Rooms[index].Type&4)>>2
+								whichdoor = 2
+							elif(orientation == 2):
+								#North
+								hasdoor = (Rooms[index].Type&8)>>3
+								whichdoor = 3
+							elif(orientation == 1):
+								#East
+								hasdoor = (Rooms[index].Type&1)>>0
+								whichdoor = 0
+							else:
+								#South
+								hasdoor = (Rooms[index].Type&2)>>1
+								whichdoor = 1
 						if(hasdoor == 1):
-							Rooms[roomindex].North.append([index,Index])
+							Rooms[roomindex].North.append([index,Index,whichdoor])
 			
 			if(hasWest == 1):
-				var point = block.GridP + Vector2(-1,0)
+				var direction
+				var dway
+				if(block.Orientation == 3):
+					direction = Vector2(-1,0)
+					dway = 2
+				elif(block.Orientation == 2):
+					direction = Vector2(0,1)
+					dway = 1
+				elif(block.Orientation == 1):
+					direction = Vector2(1,0)
+					dway = 0
+				else:
+					direction = Vector2(0,-1)
+					dway = 3
+				var point = block.GridP + direction
 				if(rect.has_point(point)):
 					if(typeof(BlocksGrid[point.x][point.y]) == typeof(block)):
 						var index = BlocksGrid[point.x][point.y].RoomIndex
-						var hasdoor = (Rooms[index].Type&1)>>0
+						var orientation = BlocksGrid[point.x][point.y].Orientation
+						var hasdoor
+						var whichdoor
+						if(dway == 3):
+							if(orientation == 3):
+								#South
+								hasdoor = (Rooms[index].Type&2)>>1
+								whichdoor = 1
+							elif(orientation == 2):
+								#West
+								hasdoor = (Rooms[index].Type&4)>>2
+								whichdoor = 2
+							elif(orientation == 1):
+								#North
+								hasdoor = (Rooms[index].Type&8)>>3
+								whichdoor = 3
+							else:
+								#East
+								hasdoor = (Rooms[index].Type&1)>>0
+								whichdoor = 0
+						elif(dway == 2):
+							if(orientation == 3):
+								#East
+								hasdoor = (Rooms[index].Type&1)>>0
+								whichdoor = 0
+							elif(orientation == 2):
+								#South
+								hasdoor = (Rooms[index].Type&2)>>1
+								whichdoor = 1
+							elif(orientation == 1):
+								#West
+								hasdoor = (Rooms[index].Type&4)>>2
+								whichdoor = 2
+							else:
+								#North
+								hasdoor = (Rooms[index].Type&8)>>3
+								whichdoor = 3
+						elif(dway == 1):
+							if(orientation == 3):
+								#North
+								hasdoor = (Rooms[index].Type&8)>>3
+								whichdoor = 3
+							elif(orientation == 2):
+								#East
+								hasdoor = (Rooms[index].Type&1)>>0
+								whichdoor = 0
+							elif(orientation == 1):
+								#South
+								hasdoor = (Rooms[index].Type&2)>>1
+								whichdoor = 1
+							else:
+								#West
+								hasdoor = (Rooms[index].Type&4)>>2
+								whichdoor = 2
+						else:
+							if(orientation == 3):
+								#West
+								hasdoor = (Rooms[index].Type&4)>>2
+								whichdoor = 2
+							elif(orientation == 2):
+								#North
+								hasdoor = (Rooms[index].Type&8)>>3
+								whichdoor = 3
+							elif(orientation == 1):
+								#East
+								hasdoor = (Rooms[index].Type&1)>>0
+								whichdoor = 0
+							else:
+								#South
+								hasdoor = (Rooms[index].Type&2)>>1
+								whichdoor = 1
 						if(hasdoor == 1):
-							Rooms[roomindex].West.append([index,Index])
+							Rooms[roomindex].West.append([index,Index,whichdoor])
 			
 			if(hasSouth == 1):
-				var point = block.GridP + Vector2(0,1)
+				var direction
+				var dway
+				if(block.Orientation == 3):
+					direction = Vector2(0,1)
+					dway = 1
+				elif(block.Orientation == 2):
+					direction = Vector2(1,0)
+					dway = 0
+				elif(block.Orientation == 1):
+					direction = Vector2(0,-1)
+					dway = 3
+				else:
+					direction = Vector2(-1,0)
+					dway = 2
+				var point = block.GridP + direction
 				if(rect.has_point(point)):
 					if(typeof(BlocksGrid[point.x][point.y]) == typeof(block)):
 						var index = BlocksGrid[point.x][point.y].RoomIndex
-						var hasdoor = (Rooms[index].Type&8)>>3
+						var orientation = BlocksGrid[point.x][point.y].Orientation
+						var hasdoor
+						var whichdoor
+						if(dway == 3):
+							if(orientation == 3):
+								#South
+								hasdoor = (Rooms[index].Type&2)>>1
+								whichdoor = 1
+							elif(orientation == 2):
+								#West
+								hasdoor = (Rooms[index].Type&4)>>2
+								whichdoor = 2
+							elif(orientation == 1):
+								#North
+								hasdoor = (Rooms[index].Type&8)>>3
+								whichdoor = 3
+							else:
+								#East
+								hasdoor = (Rooms[index].Type&1)>>0
+								whichdoor = 0
+						elif(dway == 2):
+							if(orientation == 3):
+								#East
+								hasdoor = (Rooms[index].Type&1)>>0
+								whichdoor = 0
+							elif(orientation == 2):
+								#South
+								hasdoor = (Rooms[index].Type&2)>>1
+								whichdoor = 1
+							elif(orientation == 1):
+								#West
+								hasdoor = (Rooms[index].Type&4)>>2
+								whichdoor = 2
+							else:
+								#North
+								hasdoor = (Rooms[index].Type&8)>>3
+								whichdoor = 3
+						elif(dway == 1):
+							if(orientation == 3):
+								#North
+								hasdoor = (Rooms[index].Type&8)>>3
+								whichdoor = 3
+							elif(orientation == 2):
+								#East
+								hasdoor = (Rooms[index].Type&1)>>0
+								whichdoor = 0
+							elif(orientation == 1):
+								#South
+								hasdoor = (Rooms[index].Type&2)>>1
+								whichdoor = 1
+							else:
+								#West
+								hasdoor = (Rooms[index].Type&4)>>2
+								whichdoor = 2
+						else:
+							if(orientation == 3):
+								#West
+								hasdoor = (Rooms[index].Type&4)>>2
+								whichdoor = 2
+							elif(orientation == 2):
+								#North
+								hasdoor = (Rooms[index].Type&8)>>3
+								whichdoor = 3
+							elif(orientation == 1):
+								#East
+								hasdoor = (Rooms[index].Type&1)>>0
+								whichdoor = 0
+							else:
+								#South
+								hasdoor = (Rooms[index].Type&2)>>1
+								whichdoor = 1
 						if(hasdoor == 1):
-							Rooms[roomindex].South.append([index,Index])
+							Rooms[roomindex].South.append([index,Index,whichdoor])
 			
 			if(hasEast == 1):
-				var point = block.GridP + Vector2(1,0)
+				var direction
+				var dway
+				if(block.Orientation == 3):
+					direction = Vector2(1,0)
+					dway = 0
+				elif(block.Orientation == 2):
+					direction = Vector2(0,-1)
+					dway = 3
+				elif(block.Orientation == 1):
+					direction = Vector2(-1,0)
+					dway = 2
+				else:
+					direction = Vector2(0,1)
+					dway = 1
+				var point = block.GridP + direction
 				if(rect.has_point(point)):
 					if(typeof(BlocksGrid[point.x][point.y]) == typeof(block)):
 						var index = BlocksGrid[point.x][point.y].RoomIndex
-						var hasdoor = (Rooms[index].Type&4)>>2
+						var orientation = BlocksGrid[point.x][point.y].Orientation
+						var hasdoor
+						var whichdoor
+						if(dway == 3):
+							if(orientation == 3):
+								#South
+								hasdoor = (Rooms[index].Type&2)>>1
+								whichdoor = 1
+							elif(orientation == 2):
+								#West
+								hasdoor = (Rooms[index].Type&4)>>2
+								whichdoor = 2
+							elif(orientation == 1):
+								#North
+								hasdoor = (Rooms[index].Type&8)>>3
+								whichdoor = 3
+							else:
+								#East
+								hasdoor = (Rooms[index].Type&1)>>0
+								whichdoor = 0
+						elif(dway == 2):
+							if(orientation == 3):
+								#East
+								hasdoor = (Rooms[index].Type&1)>>0
+								whichdoor = 0
+							elif(orientation == 2):
+								#South
+								hasdoor = (Rooms[index].Type&2)>>1
+								whichdoor = 1
+							elif(orientation == 1):
+								#West
+								hasdoor = (Rooms[index].Type&4)>>2
+								whichdoor = 2
+							else:
+								#North
+								hasdoor = (Rooms[index].Type&8)>>3
+								whichdoor = 3
+						elif(dway == 1):
+							if(orientation == 3):
+								#North
+								hasdoor = (Rooms[index].Type&8)>>3
+								whichdoor = 3
+							elif(orientation == 2):
+								#East
+								hasdoor = (Rooms[index].Type&1)>>0
+								whichdoor = 0
+							elif(orientation == 1):
+								#South
+								hasdoor = (Rooms[index].Type&2)>>1
+								whichdoor = 1
+							else:
+								#West
+								hasdoor = (Rooms[index].Type&4)>>2
+								whichdoor = 2
+						else:
+							if(orientation == 3):
+								#West
+								hasdoor = (Rooms[index].Type&4)>>2
+								whichdoor = 2
+							elif(orientation == 2):
+								#North
+								hasdoor = (Rooms[index].Type&8)>>3
+								whichdoor = 3
+							elif(orientation == 1):
+								#East
+								hasdoor = (Rooms[index].Type&1)>>0
+								whichdoor = 0
+							else:
+								#South
+								hasdoor = (Rooms[index].Type&2)>>1
+								whichdoor = 1
 						if(hasdoor == 1):
-							Rooms[roomindex].East.append([index,Index])
+							Rooms[roomindex].East.append([index,Index,whichdoor])

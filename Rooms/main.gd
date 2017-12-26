@@ -21,6 +21,9 @@ func _ready():
 func _input(event):
 	if(event.type == InputEvent.KEY):
 		if(event.scancode == KEY_ESCAPE):
+			for i in range(Level.Rooms[5].BlocksArray.size()):
+				for block in Level.Rooms[5].BlocksArray[i]:
+					print("Orientation for block of Room " + str(i) + " is " + str(block.get_rotd()))
 			if(not AtMenu):
 				Level.hide()
 				Level.set_process(false)
@@ -29,9 +32,6 @@ func _input(event):
 				get_node("New Game(2 sets)").show()
 				get_node("Exit").show()
 				AtMenu = true
-				get_node("Timer").set_wait_time(0.2)
-				get_node("Timer").start()
-				set_process_input(false)
 			else:
 				get_node("New Game(1 set)").hide()
 				get_node("New Game(2 sets)").hide()
@@ -40,9 +40,9 @@ func _input(event):
 				Level.set_process(true)
 				Level.set_process_input(true)
 				AtMenu = false
-				get_node("Timer").set_wait_time(0.2)
-				get_node("Timer").start()
-				set_process_input(false)
+			get_node("Timer").set_wait_time(0.2)
+			get_node("Timer").start()
+			set_process_input(false)
 	
 	
 	if(AtMenu):

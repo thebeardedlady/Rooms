@@ -9,10 +9,11 @@ var PickUpRoom = -1
 var PickUpPos = Vector2(-1,-1)
 var PickUp = false
 var PickUpBlock = null
-var RoomSize = Vector2(800,800)
-var BlocksGridSize = Vector2(8,8)
+var RoomSize = Vector2(512,512)
+var BlocksGridSize = Vector2(9,9)
 var FalseMove = false
 var DrosteMove = false
+var RotatingMove = false
 var DrosteRoom = -1
 var DrosteBox = Rect2()
 var GeneratingString = ""
@@ -26,9 +27,8 @@ onready var tween2 = get_node("Tween2")
 onready var main = get_node("../")
 
 
-
 func _ready():
-	RoomSize.x = get_viewport_rect().size.y
+	RoomSize.x = get_viewport_rect().size.x
 	RoomSize.y = RoomSize.x
 	#var texts = ["a4ddab","408365","4f3f2f","206771","449256","3f3f4f","a19758","cbc486","a77a4c","2f3f3f","8a9625","004e52","d0f16f","726346","6e6c5b","6750f0"]
 	var texts = ["e5eccb","bb4876","520929","86ac26","e5a719","395aba","fc9ddf","274c4f","e26aa9","867a44","40691d","cd422d","5c6f83","dbdc61","523671","fda12b"]
@@ -47,40 +47,50 @@ func _ready():
 	
 	if(GeneratingString == "1"):
 		#NOTE(ian): default set-up for Level One
-		var string = "8"
+		var string = "8,3"
 		string += "_"
 		string += "_"
 		string += "2;"
-		string += "10,2,2"
+		string += "10,2,2,3"
 		string += "?"
 		string += "5;"
-		string += "1,2,2/7,3,2/6,4,2/"
-		string += "3,2,3/15,3,3/13,4,3/4,5,3/"
-		string += "11,2,4/14,3,4/0,4,4/2,6,4/"
-		string += "8,2,5/9,3,5/5,4,5/12,5,5"
+		string += "1,2,2,3/7,3,2,3/6,4,2,3/"
+		string += "3,2,3,3/15,3,3,3/13,4,3,3/4,5,3,3/"
+		string += "11,2,4,3/14,3,4,3/0,4,4,3/2,6,4,3/"
+		string += "8,2,5,3/9,3,5,3/5,4,5,3/12,5,5,3"
 		GeneratingString = string
 	if(GeneratingString == "2"):
 		#NOTE(ian): default set-up for Level Two
-		var string = "8"
+		var string = "8,3"
 		string += "_"
 		string += "_"
 		string += "2;"
-		string += "10,2,2/10,4,2"
+		string += "10,2,2,3/10,4,2,3"
 		string += "?"
 		string += "5;"
-		string += "1,0,2/7,1,2/6,2,2/"
-		string += "3,0,3/15,1,3/13,2,3/4,3,3/"
-		string += "11,0,4/14,1,4/0,2,4/2,3,4/"
-		string += "8,0,5/9,1,5/5,2,5/12,3,6/"
-		string += "1,4,2/7,5,2/6,6,2/"
-		string += "3,4,3/15,5,3/13,6,3/4,7,3/"
-		string += "11,4,4/14,5,4/0,6,4/2,7,4/"
-		string += "8,4,5/9,5,5/5,6,5/12,7,6"
+		string += "1,0,2,3/7,1,2,3/6,2,2,3/"
+		string += "3,0,3,3/15,1,3,3/13,2,3,3/4,3,3,3/"
+		string += "11,0,4,3/14,1,4,3/0,2,4,3/2,3,4,3/"
+		string += "8,0,5,3/9,1,5,3/5,2,5,3/12,3,6,3/"
+		string += "1,4,2,3/7,5,2,3/6,6,2,3/"
+		string += "3,4,3,3/15,5,3,3/13,6,3,3/4,7,3,3/"
+		string += "11,4,4,3/14,5,4,3/0,6,4,3/2,7,4,3/"
+		string += "8,4,5,3/9,5,5,3/5,6,5,3/12,7,6,3"
 		GeneratingString = string
 	
 	
 	var fileparts = GeneratingString.split("_",true)
-	CurrentRoom = fileparts[0].to_int()
+	var header = fileparts[0].split(",",false)
+	CurrentRoom = header[0].to_int()
+	Rooms[CurrentRoom].Orientation = header[1].to_int()
+	if(Rooms[CurrentRoom].Orientation == 3):
+		Rooms[CurrentRoom].set_rotd(0)
+	elif(Rooms[CurrentRoom].Orientation == 2):
+		Rooms[CurrentRoom].set_rotd(90)
+	elif(Rooms[CurrentRoom].Orientation == 1):
+		Rooms[CurrentRoom].set_rotd(180)
+	else:
+		Rooms[CurrentRoom].set_rotd(270)
 	var connections = fileparts[1].split("?",false)
 	for i in range(connections.size()):
 		var roominfo = connections[i].split(";",false)
@@ -89,16 +99,16 @@ func _ready():
 			var entries = roominfo[1].split(",",false)
 			var k = 0
 			for j in range(nums[0].to_int()):
-				Rooms[i].North.append([entries[2*(j+k)].to_int(),entries[2*(j+k)+1].to_int()])
+				Rooms[i].North.append([entries[3*(j+k)].to_int(),entries[3*(j+k)+1].to_int(),entries[3*(j+k)+2]])
 			k += nums[0].to_int()
 			for j in range(nums[1].to_int()):
-				Rooms[i].West.append([entries[2*(j+k)].to_int(),entries[2*(j+k)+1].to_int()])
+				Rooms[i].West.append([entries[3*(j+k)].to_int(),entries[3*(j+k)+1].to_int(),entries[3*(j+k)+2]])
 			k += nums[1].to_int()
 			for j in range(nums[2].to_int()):
-				Rooms[i].South.append([entries[2*(j+k)].to_int(),entries[2*(j+k)+1].to_int()])
+				Rooms[i].South.append([entries[3*(j+k)].to_int(),entries[3*(j+k)+1].to_int(),entries[3*(j+k)+2]])
 			k += nums[2].to_int()
 			for j in range(nums[3].to_int()):
-				Rooms[i].East.append([entries[2*(j+k)].to_int(),entries[2*(j+k)+1].to_int()])
+				Rooms[i].East.append([entries[3*(j+k)].to_int(),entries[3*(j+k)+1].to_int(),entries[3*(j+k)+2]])
 			k += nums[3].to_int()
 	for roomfile in fileparts[2].split("?",false):
 		var roomsplit = roomfile.split(";",false)
@@ -160,12 +170,13 @@ func ConnectBlocksInBlocks(h,roomindex):
 
 func ComputeEdgeBlocks(roomindex):
 	for n in range(10):
-		var h = []
-		h.resize(Rooms.size())
-		ConnectBlocksOnEdge(h,roomindex)
+		#var h = []
+		#h.resize(Rooms.size())
+		#ConnectBlocksOnEdge(h,roomindex)
 		for i in range(Rooms.size()):
-			if(h[i] == null):
-				ConnectBlocksOnEdge(h,i)
+			#if(h[i] == null):
+			#	ConnectBlocksOnEdge(h,i)
+			Rooms[i].ComputeEdgeBlocks()
 
 
 
@@ -174,10 +185,19 @@ func _process(delta):
 	if(not PickUp):
 		for roomblocks in Rooms[CurrentRoom].BlocksArray:
 			for block in roomblocks:
-				if(block.BoundingBox.has_point(get_global_mouse_pos())):
+				if(block.MouseOver):
 					if(Input.is_action_pressed("select_block")):
 						PickUp = true
 						PickUpBlock = block
+					else:
+						if(Input.is_action_pressed("rotate_block")):
+							block.Orientation = (block.Orientation + 3) % 4
+							block.set_z(20)
+							tween.interpolate_property(block,"transform/rot",block.get_rotd(),block.get_rotd() + 90,0.2,0,1)
+							RotatingMove = true
+							set_process(false)
+							set_process_input(false)
+							tween.start()
 					block.ColorMod = Vector3(2,2,2)
 					block.update()
 				else:
@@ -186,9 +206,10 @@ func _process(delta):
 					block.ColorMod = Vector3(1,1,1)
 		
 		if(PickUp):
+			#TODO(ian): Change what PickUpPos does maybe?
 			PickUpPos = PickUpBlock.GridP
 			PickUpRoom = CurrentRoom
-			Rooms[CurrentRoom].BlocksGrid[PickUpPos.x][PickUpPos.y] = null
+			Rooms[CurrentRoom].BlocksGrid[PickUpBlock.GridP.x][PickUpBlock.GridP.y] = null
 			for roomindex in range(Rooms[CurrentRoom].BlocksArray.size()-1,-1,-1):
 				for blockindex in range(Rooms[CurrentRoom].BlocksArray[roomindex].size()-1,-1,-1):
 					Rooms[CurrentRoom].BlocksArray[roomindex][blockindex].ColorMod = Vector3(1,1,1)
@@ -202,18 +223,94 @@ func _process(delta):
 			#TODO(ian): The 'EraseEdge' functions are a hack solution. Maybe think of something better?
 			Rooms[CurrentRoom].EraseConnections(PickUpBlock.RoomIndex,CurrentRoom)
 			if(PickUpPos.y == 0):
-				Rooms[CurrentRoom].EraseEdgeNorth(PickUpBlock.RoomIndex,-CurrentRoom)
+				if(PickUpBlock.Orientation == 3):
+					Rooms[CurrentRoom].EraseEdgeNorth(PickUpBlock.RoomIndex,-CurrentRoom)
+				elif(PickUpBlock.Orientation == 2):
+					Rooms[CurrentRoom].EraseEdgeEast(PickUpBlock.RoomIndex,-CurrentRoom)
+				elif(PickUpBlock.Orientation == 1):
+					Rooms[CurrentRoom].EraseEdgeSouth(PickUpBlock.RoomIndex,-CurrentRoom)
+				else:
+					Rooms[CurrentRoom].EraseEdgeWest(PickUpBlock.RoomIndex,-CurrentRoom)
 			if(PickUpPos.x == 0):
-				Rooms[CurrentRoom].EraseEdgeWest(PickUpBlock.RoomIndex,-CurrentRoom)
+				if(PickUpBlock.Orientation == 3):
+					Rooms[CurrentRoom].EraseEdgeWest(PickUpBlock.RoomIndex,-CurrentRoom)
+				elif(PickUpBlock.Orientation == 2):
+					Rooms[CurrentRoom].EraseEdgeNorth(PickUpBlock.RoomIndex,-CurrentRoom)
+				elif(PickUpBlock.Orientation == 1):
+					Rooms[CurrentRoom].EraseEdgeEast(PickUpBlock.RoomIndex,-CurrentRoom)
+				else:
+					Rooms[CurrentRoom].EraseEdgeSouth(PickUpBlock.RoomIndex,-CurrentRoom)
 			if(PickUpPos.y == BlocksGridSize.y-1):
-				Rooms[CurrentRoom].EraseEdgeSouth(PickUpBlock.RoomIndex,-CurrentRoom)
+				if(PickUpBlock.Orientation == 3):
+					Rooms[CurrentRoom].EraseEdgeSouth(PickUpBlock.RoomIndex,-CurrentRoom)
+				elif(PickUpBlock.Orientation == 2):
+					Rooms[CurrentRoom].EraseEdgeWest(PickUpBlock.RoomIndex,-CurrentRoom)
+				elif(PickUpBlock.Orientation == 1):
+					Rooms[CurrentRoom].EraseEdgeNorth(PickUpBlock.RoomIndex,-CurrentRoom)
+				else:
+					Rooms[CurrentRoom].EraseEdgeEast(PickUpBlock.RoomIndex,-CurrentRoom)
 			if(PickUpPos.x == BlocksGridSize.x-1):
-				Rooms[CurrentRoom].EraseEdgeEast(PickUpBlock.RoomIndex,-CurrentRoom)
+				if(PickUpBlock.Orientation == 3):
+					Rooms[CurrentRoom].EraseEdgeEast(PickUpBlock.RoomIndex,-CurrentRoom)
+				elif(PickUpBlock.Orientation == 2):
+					Rooms[CurrentRoom].EraseEdgeSouth(PickUpBlock.RoomIndex,-CurrentRoom)
+				elif(PickUpBlock.Orientation == 1):
+					Rooms[CurrentRoom].EraseEdgeWest(PickUpBlock.RoomIndex,-CurrentRoom)
+				else:
+					Rooms[CurrentRoom].EraseEdgeNorth(PickUpBlock.RoomIndex,-CurrentRoom)
 			Rooms[CurrentRoom].ComputeMiddleBlocks()
 			ComputeEdgeBlocks(CurrentRoom)
 			
 			Rooms[CurrentRoom].remove_child(PickUpBlock)
 			add_child(PickUpBlock)
+			if(Rooms[CurrentRoom].Orientation == 3):
+				if(PickUpBlock.Orientation == 3):
+					PickUpBlock.set_rotd(0)
+				elif(PickUpBlock.Orientation == 2):
+					PickUpBlock.set_rotd(90)
+				elif(PickUpBlock.Orientation == 1):
+					PickUpBlock.set_rotd(180)
+				else:
+					PickUpBlock.set_rotd(270)
+			elif(Rooms[CurrentRoom].Orientation == 2):
+				if(PickUpBlock.Orientation == 3):
+					PickUpBlock.Orientation = 2
+					PickUpBlock.set_rotd(90)
+				elif(PickUpBlock.Orientation == 2):
+					PickUpBlock.Orientation = 1
+					PickUpBlock.set_rotd(180)
+				elif(PickUpBlock.Orientation == 1):
+					PickUpBlock.Orientation = 0
+					PickUpBlock.set_rotd(270)
+				else:
+					PickUpBlock.Orientation = 3
+					PickUpBlock.set_rotd(0)
+			elif(Rooms[CurrentRoom].Orientation == 1):
+				if(PickUpBlock.Orientation == 3):
+					PickUpBlock.Orientation = 1
+					PickUpBlock.set_rotd(180)
+				elif(PickUpBlock.Orientation == 2):
+					PickUpBlock.Orientation = 0
+					PickUpBlock.set_rotd(270)
+				elif(PickUpBlock.Orientation == 1):
+					PickUpBlock.Orientation = 3
+					PickUpBlock.set_rotd(0)
+				else:
+					PickUpBlock.Orientation = 2
+					PickUpBlock.set_rotd(90)
+			else:
+				if(PickUpBlock.Orientation == 3):
+					PickUpBlock.Orientation = 0
+					PickUpBlock.set_rotd(270)
+				elif(PickUpBlock.Orientation == 2):
+					PickUpBlock.Orientation = 3
+					PickUpBlock.set_rotd(0)
+				elif(PickUpBlock.Orientation == 1):
+					PickUpBlock.Orientation = 2
+					PickUpBlock.set_rotd(90)
+				else:
+					PickUpBlock.Orientation = 1
+					PickUpBlock.set_rotd(180)
 			PickUpBlock.update()
 			PickUpBlock.set_z(100)
 			
@@ -222,20 +319,29 @@ func _process(delta):
 				for block in roomblocks:
 					block.update()
 	else:
+		#TODO(ian): this needs major revision
 		var BlockSize = Rooms[CurrentRoom].BlockSize
 		if(Input.is_action_pressed("select_block")):
 			PickUpBlock.set_scale(Vector2(1.5,1.5))
-			var rect = Rect2(0,0,BlocksGridSize.x-0.5,BlocksGridSize.y-0.5)
-			var mousepos = get_global_mouse_pos()-(BlockSize*0.5)
+			var rect = Rect2((BlocksGridSize.x - 1) * -0.5,(BlocksGridSize.y - 1) * -0.5,BlocksGridSize.x - 0.5,BlocksGridSize.y - 0.5)
+			var mousepos = get_global_mouse_pos()
 			mousepos = mousepos.snapped(BlockSize)
 			var temppos = mousepos
 			temppos.x /= BlockSize.x
 			temppos.y /= BlockSize.y
+			#TODO(ian): Is this check really necessary?
 			if(rect.has_point(temppos)):
-				PickUpBlock.GridP = temppos
+				#NOTE(ian): the subtraction of (1,1) from BlocksGridSize is for odd grids only
+				if(Rooms[CurrentRoom].Orientation == 3):
+					PickUpBlock.GridP = temppos + 0.5 * (BlocksGridSize - Vector2(1,1))
+				elif(Rooms[CurrentRoom].Orientation == 2):
+					PickUpBlock.GridP = ComplexMult(temppos,Vector2(0,1)) + 0.5 * (BlocksGridSize - Vector2(1,1))
+				elif(Rooms[CurrentRoom].Orientation == 1):
+					PickUpBlock.GridP = ComplexMult(temppos,Vector2(-1,0)) + 0.5 * (BlocksGridSize - Vector2(1,1))
+				else:
+					PickUpBlock.GridP = ComplexMult(temppos,Vector2(0,-1)) + 0.5 * (BlocksGridSize - Vector2(1,1))
 				PickUpBlock.BoundingBox.pos = mousepos
-			var shift = (BlockSize*0.5)*0.5
-			PickUpBlock.set_pos(PickUpBlock.BoundingBox.pos-shift)
+			PickUpBlock.set_pos(PickUpBlock.BoundingBox.pos)
 			var BlocksGrid = Rooms[CurrentRoom].BlocksGrid
 			if(BlocksGrid[PickUpBlock.GridP.x][PickUpBlock.GridP.y] != null):
 				PickUpBlock.ColorMod = Vector3(0.3,0.3,0.3)
@@ -244,10 +350,26 @@ func _process(delta):
 				PickUpRoom = CurrentRoom
 				PickUpPos = PickUpBlock.GridP
 			PickUpBlock.update()
+			if(Input.is_action_pressed("rotate_block")):
+				PickUpBlock.Orientation = (PickUpBlock.Orientation + 3) % 4
+				tween.interpolate_property(PickUpBlock,"transform/rot",PickUpBlock.get_rotd(),PickUpBlock.get_rotd() + 90,0.2,0,1)
+				RotatingMove = true
+				set_process(false)
+				set_process_input(false)
+				tween.start()
 		else:
 			DropBlock()
 
+func ComplexMult(a,b):
+	var c = Vector2()
+	c.x = a.x*b.x - a.y*b.y
+	c.y = a.x*b.y + a.y*b.x
+	return c
+
+
+
 func DropBlock():
+	print(str(PickUpBlock.GridP))
 	var BlockSize = Rooms[CurrentRoom].BlockSize
 	PickUpBlock.ColorMod = Vector3(1,1,1)
 	remove_child(PickUpBlock)
@@ -266,15 +388,78 @@ func DropBlock():
 			BlocksArray[index].append(PickUpBlock)
 		
 		var pos = PickUpBlock.GridP
+		pos = pos - 0.5 * (BlocksGridSize - Vector2(1,1))
 		pos.x *= BlockSize.x
 		pos.y *= BlockSize.y
 		PickUpBlock.set_pos(pos)
-		PickUpBlock.BoundingBox.pos = pos
+		#print(str(PickUpBlock.GridP))
+		
+		#PickUpBlock.BoundingBox.pos = pos
 		BlocksGrid[PickUpBlock.GridP.x][PickUpBlock.GridP.y] = PickUpBlock
+		if(Rooms[CurrentRoom].Orientation == 3):
+			if(PickUpBlock.Orientation == 3):
+				PickUpBlock.Orientation = 3
+				PickUpBlock.set_rotd(0)
+			elif(PickUpBlock.Orientation == 2):
+				PickUpBlock.Orientation = 2
+				PickUpBlock.set_rotd(90)
+			elif(PickUpBlock.Orientation == 1):
+				PickUpBlock.Orientation = 1
+				PickUpBlock.set_rotd(180)
+			else:
+				PickUpBlock.Orientation = 0
+				PickUpBlock.set_rotd(270)
+		elif(Rooms[CurrentRoom].Orientation == 2):
+			if(PickUpBlock.Orientation == 3):
+				PickUpBlock.Orientation = 0
+				PickUpBlock.set_rotd(270)
+			elif(PickUpBlock.Orientation == 2):
+				PickUpBlock.Orientation = 3
+				PickUpBlock.set_rotd(0)
+			elif(PickUpBlock.Orientation == 1):
+				PickUpBlock.Orientation = 2
+				PickUpBlock.set_rotd(90)
+			else:
+				PickUpBlock.Orientation = 1
+				PickUpBlock.set_rotd(90)
+		elif(Rooms[CurrentRoom].Orientation == 1):
+			if(PickUpBlock.Orientation == 3):
+				PickUpBlock.Orientation = 1
+				PickUpBlock.set_rotd(180)
+			elif(PickUpBlock.Orientation == 2):
+				PickUpBlock.Orientation = 0
+				PickUpBlock.set_rotd(270)
+			elif(PickUpBlock.Orientation == 1):
+				PickUpBlock.Orientation = 3
+				PickUpBlock.set_rotd(0)
+			else:
+				PickUpBlock.Orientation = 2
+				PickUpBlock.set_rotd(90)
+		else:
+			if(PickUpBlock.Orientation == 3):
+				PickUpBlock.Orientation = 2
+				PickUpBlock.set_rotd(90)
+			elif(PickUpBlock.Orientation == 2):
+				PickUpBlock.Orientation = 1
+				PickUpBlock.set_rotd(180)
+			elif(PickUpBlock.Orientation == 1):
+				PickUpBlock.Orientation = 0
+				PickUpBlock.set_rotd(270)
+			else:
+				PickUpBlock.Orientation = 3
+				PickUpBlock.set_rotd(0)
 		Rooms[CurrentRoom].ComputeMiddleBlocks()
 		ComputeEdgeBlocks(CurrentRoom)
 		Rooms[CurrentRoom].add_child(PickUpBlock)
-		get_node("sfx").play("box")
+		#if(Rooms[CurrentRoom].Orientation == 3):
+		#	PickUpBlock.set_pos(PickUpBlock.get_pos())
+		#elif(Rooms[CurrentRoom].Orientation == 2):
+		#	PickUpBlock.set_pos(ComplexMult(PickUpBlock.get_pos(),Vector2(0,1)))
+		#elif(Rooms[CurrentRoom].Orientation == 1):
+		#	PickUpBlock.set_pos(ComplexMult(PickUpBlock.get_pos(),Vector2(-1,0)))
+		#else:
+		#	PickUpBlock.set_pos(ComplexMult(PickUpBlock.get_pos(),Vector2(0,-1)))
+		#get_node("sfx").play("box")
 	else:
 		var index = -1
 		BlocksGrid = Rooms[PickUpRoom].BlocksGrid
@@ -289,17 +474,82 @@ func DropBlock():
 		PickUpBlock.GridP = PickUpPos
 		BlocksGrid[PickUpBlock.GridP.x][PickUpBlock.GridP.y] = PickUpBlock
 		var pos = PickUpBlock.GridP
+		pos = pos - 0.5 * (BlocksGridSize - Vector2(1,1))
 		pos.x *= BlockSize.x
 		pos.y *= BlockSize.y
 		PickUpBlock.set_pos(pos)
+		#print(str(PickUpBlock.GridP))
+		
+		
 		PickUpBlock.BoundingBox.pos = pos
+		if(Rooms[PickUpRoom].Orientation == 3):
+			if(PickUpBlock.Orientation == 3):
+				PickUpBlock.Orientation = 3
+				PickUpBlock.set_rotd(0)
+			elif(PickUpBlock.Orientation == 2):
+				PickUpBlock.Orientation = 2
+				PickUpBlock.set_rotd(90)
+			elif(PickUpBlock.Orientation == 1):
+				PickUpBlock.Orientation = 1
+				PickUpBlock.set_rotd(180)
+			else:
+				PickUpBlock.Orientation = 0
+				PickUpBlock.set_rotd(270)
+		elif(Rooms[PickUpRoom].Orientation == 2):
+			if(PickUpBlock.Orientation == 3):
+				PickUpBlock.Orientation = 0
+				PickUpBlock.set_rotd(270)
+			elif(PickUpBlock.Orientation == 2):
+				PickUpBlock.Orientation = 3
+				PickUpBlock.set_rotd(0)
+			elif(PickUpBlock.Orientation == 1):
+				PickUpBlock.Orientation = 2
+				PickUpBlock.set_rotd(90)
+			else:
+				PickUpBlock.Orientation = 1
+				PickUpBlock.set_rotd(90)
+		elif(Rooms[PickUpRoom].Orientation == 1):
+			if(PickUpBlock.Orientation == 3):
+				PickUpBlock.Orientation = 1
+				PickUpBlock.set_rotd(180)
+			elif(PickUpBlock.Orientation == 2):
+				PickUpBlock.Orientation = 0
+				PickUpBlock.set_rotd(270)
+			elif(PickUpBlock.Orientation == 1):
+				PickUpBlock.Orientation = 3
+				PickUpBlock.set_rotd(0)
+			else:
+				PickUpBlock.Orientation = 2
+				PickUpBlock.set_rotd(90)
+		else:
+			if(PickUpBlock.Orientation == 3):
+				PickUpBlock.Orientation = 2
+				PickUpBlock.set_rotd(90)
+			elif(PickUpBlock.Orientation == 2):
+				PickUpBlock.Orientation = 1
+				PickUpBlock.set_rotd(180)
+			elif(PickUpBlock.Orientation == 1):
+				PickUpBlock.Orientation = 0
+				PickUpBlock.set_rotd(270)
+			else:
+				PickUpBlock.Orientation = 3
+				PickUpBlock.set_rotd(0)
 		if(PickUpRoom != CurrentRoom):
 			pass
 		else:
-			get_node("sfx").play("box")
+			#get_node("sfx").play("box")
+			pass
 		Rooms[PickUpRoom].ComputeMiddleBlocks()
 		ComputeEdgeBlocks(PickUpRoom)
 		Rooms[PickUpRoom].add_child(PickUpBlock)
+		#if(Rooms[PickUpRoom].Orientation == 3):
+		#	PickUpBlock.set_pos(PickUpBlock.get_pos())
+		#elif(Rooms[PickUpRoom].Orientation == 2):
+		#	PickUpBlock.set_pos(ComplexMult(PickUpBlock.get_pos(),Vector2(0,-1)))
+		#elif(Rooms[PickUpRoom].Orientation == 1):
+		#	PickUpBlock.set_pos(ComplexMult(PickUpBlock.get_pos(),Vector2(-1,0)))
+		#else:
+		#	PickUpBlock.set_pos(ComplexMult(PickUpBlock.get_pos(),Vector2(0,1)))
 	PickUp = false
 	PickUpBlock = null
 	
@@ -312,8 +562,9 @@ func DropBlock():
 
 func SaveGame(path):
 	if(PickUp):
+		#TODO(ian): Depending on how DropBlock() changes this may need to be revised
 		DropBlock()
-	var savedata = str(CurrentRoom) + "_"
+	var savedata = str(CurrentRoom) + "," +  str(Rooms[CurrentRoom].Orientation) + "_"
 	var roomdata = ""
 	for room in Rooms:
 		roomdata += str(room.North.size()) + ","
@@ -321,13 +572,13 @@ func SaveGame(path):
 		roomdata += str(room.South.size()) + ","
 		roomdata += str(room.East.size()) + ";"
 		for entry in room.North:
-			roomdata += str(entry[0]) + "," + str(entry[1]) + ","
+			roomdata += str(entry[0]) + "," + str(entry[1]) + "," + str(entry[2]) + ","
 		for entry in room.West:
-			roomdata += str(entry[0]) + "," + str(entry[1]) + ","
+			roomdata += str(entry[0]) + "," + str(entry[1]) + "," + str(entry[2]) + ","
 		for entry in room.South:
-			roomdata += str(entry[0]) + "," + str(entry[1]) + ","
+			roomdata += str(entry[0]) + "," + str(entry[1]) + "," + str(entry[2]) + ","
 		for entry in room.East:
-			roomdata += str(entry[0]) + "," + str(entry[1]) + ","
+			roomdata += str(entry[0]) + "," + str(entry[1]) + "," + str(entry[2]) + ","
 		roomdata += "?"
 	savedata += roomdata + "_"
 	for i in range(Rooms.size()):
@@ -337,7 +588,8 @@ func SaveGame(path):
 				for block in roomblocks:
 					var blockdata = str(block.RoomIndex) + ","
 					blockdata += str(block.GridP.x) + ","
-					blockdata += str(block.GridP.y) + "/"
+					blockdata += str(block.GridP.y) + ","
+					blockdata += str(block.Orientation) + "/"
 					savedata += blockdata
 	main.SaveContent(savedata,path)
 
@@ -349,6 +601,7 @@ func _input(event):
 		#if(event.scancode == KEY_S):
 		#	SaveGame()
 		
+		#TODO(ian): This doesn't work anymore!!!!!
 		if(event.scancode == KEY_SPACE):# and Count > 0.0):
 			
 			for roomblocks in Rooms[CurrentRoom].BlocksArray:
@@ -397,36 +650,125 @@ func _input(event):
 		
 		var type = Rooms[CurrentRoom].Type
 		if(event.scancode == KEY_UP or event.scancode == KEY_W):
-			if(((type&8)>>3) == 1):
-				var connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].North)
+			var hasdoor
+			var direction
+			if(Rooms[CurrentRoom].Orientation == 3):
+				hasdoor = (type&8)>>3
+				direction = 3
+			elif(Rooms[CurrentRoom].Orientation == 2):
+				hasdoor = (type&1)>>0
+				direction = 0
+			elif(Rooms[CurrentRoom].Orientation == 1):
+				hasdoor = (type&2)>>1
+				direction = 1
+			else:
+				hasdoor = (type&4)>>2
+				direction = 2
+			if(hasdoor == 1):
+				var connections
+				if(direction == 3):
+					connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].North)
+				elif(direction == 2):
+					connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].West)
+				elif(direction == 1):
+					connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].South)
+				else:
+					connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].East)
 				if(connections == 1):
-					var room = Rooms[CurrentRoom]
-					if(true): #if(room.NumConnections(Rooms[room.North[0][0]].South) == 1):
-						if(CurrentRoom != Rooms[CurrentRoom].North[0][0]):
-							tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(0,RoomSize.y),0.5,1,2)
-							CurrentRoom = Rooms[CurrentRoom].North[0][0]
-							Rooms[CurrentRoom].show()
+					var nextRoom
+					var whichdoor
+					if(direction == 3):
+						nextRoom = Rooms[CurrentRoom].North[0][0]
+						whichdoor = Rooms[CurrentRoom].North[0][2]
+					elif(direction == 2):
+						nextRoom = Rooms[CurrentRoom].West[0][0]
+						whichdoor = Rooms[CurrentRoom].West[0][2]
+					elif(direction == 1):
+						nextRoom = Rooms[CurrentRoom].South[0][0]
+						whichdoor = Rooms[CurrentRoom].South[0][2]
+					else:
+						nextRoom = Rooms[CurrentRoom].East[0][0]
+						whichdoor = Rooms[CurrentRoom].East[0][2]
+					if(CurrentRoom != nextRoom):
+						Rooms[CurrentRoom].set_process(false)
+						#TODO(ian): Change the Position where the rooms go after the interpolation
+						tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(0,RoomSize.y),0.5,1,2)
+						CurrentRoom = nextRoom
+						if(whichdoor == 3):
+							Rooms[CurrentRoom].Orientation = 1
+							Rooms[CurrentRoom].set_rotd(180)
+						elif(whichdoor == 2):
+							Rooms[CurrentRoom].Orientation = 2
+							Rooms[CurrentRoom].set_rotd(90)
+						elif(whichdoor == 1):
+							Rooms[CurrentRoom].Orientation = 3
+							Rooms[CurrentRoom].set_rotd(0)
 						else:
-							CreateDummyRoom(Rooms[CurrentRoom])
-							DummyRoom.set_pos(Vector2(0,0))
-							DummyRoom.show()
-							tween.interpolate_property(DummyRoom,"transform/pos",DummyRoom.get_pos(),Vector2(0,RoomSize.y),0.5,1,2)
-						Rooms[CurrentRoom].set_pos(Vector2(0,-RoomSize.y))
-						tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(0,0),0.5,1,2)
-						MovedNorth = true
-						set_process_input(false)
-						tween.start()
+							Rooms[CurrentRoom].Orientation = 0
+							Rooms[CurrentRoom].set_rotd(270)
+						Rooms[CurrentRoom].show()
+					else:
+						CreateDummyRoom(Rooms[CurrentRoom],Rooms[CurrentRoom].Orientation)
+						if(whichdoor == 3):
+							Rooms[CurrentRoom].Orientation = 1
+							Rooms[CurrentRoom].set_rotd(180)
+						elif(whichdoor == 2):
+							Rooms[CurrentRoom].Orientation = 2
+							Rooms[CurrentRoom].set_rotd(90)
+						elif(whichdoor == 1):
+							Rooms[CurrentRoom].Orientation = 3
+							Rooms[CurrentRoom].set_rotd(0)
+						else:
+							Rooms[CurrentRoom].Orientation = 0
+							Rooms[CurrentRoom].set_rotd(270)
+						DummyRoom.set_pos(Vector2(0,0))
+						DummyRoom.show()
+						tween.interpolate_property(DummyRoom,"transform/pos",DummyRoom.get_pos(),Vector2(0,RoomSize.y),0.5,1,2)
+					Rooms[CurrentRoom].set_pos(Vector2(0,-RoomSize.y))
+					tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(0,0),0.5,1,2)
+					MovedNorth = true
+					set_process_input(false)
+					tween.start()
 				else:
 					if(connections > 1):
 						impossible.ShowIndex = 0
 						impossible.Count = 0.0
-						for entry in Rooms[CurrentRoom].North:
+						var roomArray
+						if(Rooms[CurrentRoom].Orientation == 3):
+							roomArray = Rooms[CurrentRoom].North
+						elif(Rooms[CurrentRoom].Orientation == 2):
+							roomArray = Rooms[CurrentRoom].East
+						elif(Rooms[CurrentRoom].Orientation == 1):
+							roomArray = Rooms[CurrentRoom].South
+						else:
+							roomArray = Rooms[CurrentRoom].West
+						for entry in roomArray:
 							var roomindex = entry[0]
+							var whichdoor = entry[2]
 							if(roomindex == CurrentRoom):
-								CreateDummyRoom(Rooms[CurrentRoom])
+								if(whichdoor == 3):
+									CreateDummyRoom(Rooms[CurrentRoom],1)
+								elif(whichdoor == 2):
+									CreateDummyRoom(Rooms[CurrentRoom],2)
+								elif(whichdoor == 1):
+									CreateDummyRoom(Rooms[CurrentRoom],3)
+								else:
+									CreateDummyRoom(Rooms[CurrentRoom],0)
 								impossible.RoomCycle.append(DummyRoom)
 								DummyRoom.set_pos(Vector2(0,-RoomSize.y))
 							else:
+								if(whichdoor == 3):
+									Rooms[roomindex].Orientation = 1
+									Rooms[roomindex].set_rotd(180)
+								elif(whichdoor == 2):
+									Rooms[roomindex].Orientation = 2
+									Rooms[roomindex].set_rotd(90)
+								elif(whichdoor == 1):
+									Rooms[roomindex].Orientation = 3
+									Rooms[roomindex].set_rotd(0)
+								else:
+									Rooms[roomindex].Orientation = 0
+									Rooms[roomindex].set_rotd(270)
 								impossible.RoomCycle.append(Rooms[roomindex])
 								Rooms[roomindex].set_pos(Vector2(0,-RoomSize.y))
 						impossible.set_process(true)
@@ -437,37 +779,124 @@ func _input(event):
 					tween.start()
 		
 		if(event.scancode == KEY_LEFT or event.scancode == KEY_A):
-			if(((type&4)>>2) == 1):
-				var connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].West)
+			var hasdoor
+			var direction
+			if(Rooms[CurrentRoom].Orientation == 3):
+				hasdoor = (type&4)>>2
+				direction = 2
+			elif(Rooms[CurrentRoom].Orientation == 2):
+				hasdoor = (type&8)>>3
+				direction = 3
+			elif(Rooms[CurrentRoom].Orientation == 1):
+				hasdoor = (type&1)>>0
+				direction = 0
+			else:
+				hasdoor = (type&2)>>1
+				direction = 1
+			if(hasdoor == 1):
+				var connections
+				if(direction == 3):
+					connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].North)
+				elif(direction == 2):
+					connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].West)
+				elif(direction == 1):
+					connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].South)
+				else:
+					connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].East)
 				if(connections == 1):
-					var room = Rooms[CurrentRoom]
-					if(true): #if(room.NumConnections(Rooms[room.West[0][0]].East) == 1):
+					var nextRoom
+					var whichdoor
+					if(direction == 3):
+						nextRoom = Rooms[CurrentRoom].North[0][0]
+						whichdoor = Rooms[CurrentRoom].North[0][2]
+					elif(direction == 2):
+						nextRoom = Rooms[CurrentRoom].West[0][0]
+						whichdoor = Rooms[CurrentRoom].West[0][2]
+					elif(direction == 1):
+						nextRoom = Rooms[CurrentRoom].South[0][0]
+						whichdoor = Rooms[CurrentRoom].South[0][2]
+					else:
+						nextRoom = Rooms[CurrentRoom].East[0][0]
+						whichdoor = Rooms[CurrentRoom].East[0][2]
+					if(CurrentRoom != nextRoom):
 						Rooms[CurrentRoom].set_process(false)
-						if(CurrentRoom != Rooms[CurrentRoom].West[0][0]):
-							tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(RoomSize.x,0),0.5,1,2)
-							CurrentRoom = Rooms[CurrentRoom].West[0][0]
-							Rooms[CurrentRoom].show()
+						tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(RoomSize.x,0),0.5,1,2)
+						CurrentRoom = nextRoom
+						if(whichdoor == 3):
+							Rooms[CurrentRoom].Orientation = 0
+							Rooms[CurrentRoom].set_rotd(270)
+						elif(whichdoor == 2):
+							Rooms[CurrentRoom].Orientation = 1
+							Rooms[CurrentRoom].set_rotd(180)
+						elif(whichdoor == 1):
+							Rooms[CurrentRoom].Orientation = 2
+							Rooms[CurrentRoom].set_rotd(90)
 						else:
-							CreateDummyRoom(Rooms[CurrentRoom])
-							DummyRoom.set_pos(Vector2(0,0))
-							DummyRoom.show()
-							tween.interpolate_property(DummyRoom,"transform/pos",DummyRoom.get_pos(),Vector2(RoomSize.x,0),0.5,1,2)
-						Rooms[CurrentRoom].set_pos(Vector2(-RoomSize.x,0))
-						tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(0,0),0.5,1,2)
-						MovedWest = true
-						set_process_input(false)
-						tween.start()
+							Rooms[CurrentRoom].Orientation = 3
+							Rooms[CurrentRoom].set_rotd(0)
+						Rooms[CurrentRoom].show()
+					else:
+						CreateDummyRoom(Rooms[CurrentRoom],Rooms[CurrentRoom].Orientation)
+						if(whichdoor == 3):
+							Rooms[CurrentRoom].Orientation = 0
+							Rooms[CurrentRoom].set_rotd(270)
+						elif(whichdoor == 2):
+							Rooms[CurrentRoom].Orientation = 1
+							Rooms[CurrentRoom].set_rotd(180)
+						elif(whichdoor == 1):
+							Rooms[CurrentRoom].Orientation = 2
+							Rooms[CurrentRoom].set_rotd(90)
+						else:
+							Rooms[CurrentRoom].Orientation = 3
+							Rooms[CurrentRoom].set_rotd(0)
+						DummyRoom.set_pos(Vector2(0,0))
+						DummyRoom.show()
+						tween.interpolate_property(DummyRoom,"transform/pos",DummyRoom.get_pos(),Vector2(RoomSize.x,0),0.5,1,2)
+					Rooms[CurrentRoom].set_pos(Vector2(-RoomSize.x,0))
+					tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(0,0),0.5,1,2)
+					MovedWest = true
+					set_process_input(false)
+					tween.start()
 				else:
 					if(connections > 1):
 						impossible.ShowIndex = 0
 						impossible.Count = 0.0
-						for entry in Rooms[CurrentRoom].West:
+						var roomArray
+						if(Rooms[CurrentRoom].Orientation == 3):
+							roomArray = Rooms[CurrentRoom].West
+						elif(Rooms[CurrentRoom].Orientation == 2):
+							roomArray = Rooms[CurrentRoom].North
+						elif(Rooms[CurrentRoom].Orientation == 1):
+							roomArray = Rooms[CurrentRoom].East
+						else:
+							roomArray = Rooms[CurrentRoom].South
+						for entry in roomArray:
 							var roomindex = entry[0]
+							var whichdoor = entry[2]
 							if(roomindex == CurrentRoom):
-								CreateDummyRoom(Rooms[CurrentRoom])
+								if(whichdoor == 3):
+									CreateDummyRoom(Rooms[CurrentRoom],0)
+								elif(whichdoor == 2):
+									CreateDummyRoom(Rooms[CurrentRoom],1)
+								elif(whichdoor == 1):
+									CreateDummyRoom(Rooms[CurrentRoom],2)
+								else:
+									CreateDummyRoom(Rooms[CurrentRoom],3)
 								impossible.RoomCycle.append(DummyRoom)
 								DummyRoom.set_pos(Vector2(-RoomSize.x,0))
 							else:
+								if(whichdoor == 3):
+									Rooms[roomindex].Orientation = 0
+									Rooms[roomindex].set_rotd(270)
+								elif(whichdoor == 2):
+									Rooms[roomindex].Orientation = 1
+									Rooms[roomindex].set_rotd(180)
+								elif(whichdoor == 1):
+									Rooms[roomindex].Orientation = 2
+									Rooms[roomindex].set_rotd(90)
+								else:
+									Rooms[roomindex].Orientation = 3
+									Rooms[roomindex].set_rotd(0)
 								impossible.RoomCycle.append(Rooms[roomindex])
 								Rooms[roomindex].set_pos(Vector2(-RoomSize.x,0))
 						impossible.set_process(true)
@@ -478,37 +907,124 @@ func _input(event):
 					tween.start()
 		
 		if(event.scancode == KEY_DOWN or event.scancode == KEY_S):
-			if(((type&2)>>1) == 1):
-				var connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].South)
+			var hasdoor
+			var direction
+			if(Rooms[CurrentRoom].Orientation == 3):
+				hasdoor = (type&2)>>1
+				direction = 1
+			elif(Rooms[CurrentRoom].Orientation == 2):
+				hasdoor = (type&4)>>2
+				direction = 2
+			elif(Rooms[CurrentRoom].Orientation == 1):
+				hasdoor = (type&8)>>3
+				direction = 3
+			else:
+				hasdoor = (type&1)>>0
+				direction = 0
+			if(hasdoor == 1):
+				var connections
+				if(direction == 3):
+					connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].North)
+				elif(direction == 2):
+					connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].West)
+				elif(direction == 1):
+					connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].South)
+				else:
+					connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].East)
 				if(connections == 1):
-					var room = Rooms[CurrentRoom]
-					if(true): #if(room.NumConnections(Rooms[room.South[0][0]].North) == 1):
+					var nextRoom
+					var whichdoor
+					if(direction == 3):
+						nextRoom = Rooms[CurrentRoom].North[0][0]
+						whichdoor = Rooms[CurrentRoom].North[0][2]
+					elif(direction == 2):
+						nextRoom = Rooms[CurrentRoom].West[0][0]
+						whichdoor = Rooms[CurrentRoom].West[0][2]
+					elif(direction == 1):
+						nextRoom = Rooms[CurrentRoom].South[0][0]
+						whichdoor = Rooms[CurrentRoom].South[0][2]
+					else:
+						nextRoom = Rooms[CurrentRoom].East[0][0]
+						whichdoor = Rooms[CurrentRoom].East[0][2]
+					if(CurrentRoom != nextRoom):
 						Rooms[CurrentRoom].set_process(false)
-						if(CurrentRoom != Rooms[CurrentRoom].South[0][0]):
-							tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(0,-RoomSize.y),0.5,1,2)
-							CurrentRoom = Rooms[CurrentRoom].South[0][0]
-							Rooms[CurrentRoom].show()
+						tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(0,-RoomSize.y),0.5,1,2)
+						CurrentRoom = nextRoom
+						if(whichdoor == 3):
+							Rooms[CurrentRoom].Orientation = 3
+							Rooms[CurrentRoom].set_rotd(0)
+						elif(whichdoor == 2):
+							Rooms[CurrentRoom].Orientation = 0
+							Rooms[CurrentRoom].set_rotd(270)
+						elif(whichdoor == 1):
+							Rooms[CurrentRoom].Orientation = 1
+							Rooms[CurrentRoom].set_rotd(180)
 						else:
-							CreateDummyRoom(Rooms[CurrentRoom])
-							DummyRoom.set_pos(Vector2(0,0))
-							DummyRoom.show()
-							tween.interpolate_property(DummyRoom,"transform/pos",DummyRoom.get_pos(),Vector2(0,-RoomSize.y),0.5,1,2)
-						Rooms[CurrentRoom].set_pos(Vector2(0,RoomSize.y))
-						tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(0,0),0.5,1,2)
-						MovedSouth = true
-						set_process_input(false)
-						tween.start()
+							Rooms[CurrentRoom].Orientation = 2
+							Rooms[CurrentRoom].set_rotd(90)
+						Rooms[CurrentRoom].show()
+					else:
+						CreateDummyRoom(Rooms[CurrentRoom],Rooms[CurrentRoom].Orientation)
+						if(whichdoor == 3):
+							Rooms[CurrentRoom].Orientation = 3
+							Rooms[CurrentRoom].set_rotd(0)
+						elif(whichdoor == 2):
+							Rooms[CurrentRoom].Orientation = 0
+							Rooms[CurrentRoom].set_rotd(270)
+						elif(whichdoor == 1):
+							Rooms[CurrentRoom].Orientation = 1
+							Rooms[CurrentRoom].set_rotd(180)
+						else:
+							Rooms[CurrentRoom].Orientation = 2
+							Rooms[CurrentRoom].set_rotd(90)
+						DummyRoom.set_pos(Vector2(0,0))
+						DummyRoom.show()
+						tween.interpolate_property(DummyRoom,"transform/pos",DummyRoom.get_pos(),Vector2(0,-RoomSize.y),0.5,1,2)
+					Rooms[CurrentRoom].set_pos(Vector2(0,RoomSize.y))
+					tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(0,0),0.5,1,2)
+					MovedSouth = true
+					set_process_input(false)
+					tween.start()
 				else:
 					if(connections > 1):
 						impossible.ShowIndex = 0
 						impossible.Count = 0.0
-						for entry in Rooms[CurrentRoom].South:
+						var roomArray
+						if(Rooms[CurrentRoom].Orientation == 3):
+							roomArray = Rooms[CurrentRoom].South
+						elif(Rooms[CurrentRoom].Orientation == 2):
+							roomArray = Rooms[CurrentRoom].West
+						elif(Rooms[CurrentRoom].Orientation == 1):
+							roomArray = Rooms[CurrentRoom].North
+						else:
+							roomArray = Rooms[CurrentRoom].East
+						for entry in roomArray:
 							var roomindex = entry[0]
+							var whichdoor = entry[2]
 							if(roomindex == CurrentRoom):
-								CreateDummyRoom(Rooms[CurrentRoom])
+								if(whichdoor == 3):
+									CreateDummyRoom(Rooms[CurrentRoom],3)
+								elif(whichdoor == 2):
+									CreateDummyRoom(Rooms[CurrentRoom],0)
+								elif(whichdoor == 1):
+									CreateDummyRoom(Rooms[CurrentRoom],1)
+								else:
+									CreateDummyRoom(Rooms[CurrentRoom],2)
 								impossible.RoomCycle.append(DummyRoom)
 								DummyRoom.set_pos(Vector2(0,RoomSize.y))
 							else:
+								if(whichdoor == 3):
+									Rooms[roomindex].Orientation = 3
+									Rooms[roomindex].set_rotd(0)
+								elif(whichdoor == 2):
+									Rooms[roomindex].Orientation = 0
+									Rooms[roomindex].set_rotd(270)
+								elif(whichdoor == 1):
+									Rooms[roomindex].Orientation = 1
+									Rooms[roomindex].set_rotd(180)
+								else:
+									Rooms[roomindex].Orientation = 2
+									Rooms[roomindex].set_rotd(90)
 								impossible.RoomCycle.append(Rooms[roomindex])
 								Rooms[roomindex].set_pos(Vector2(0,RoomSize.y))
 						impossible.set_process(true)
@@ -519,37 +1035,124 @@ func _input(event):
 					tween.start()
 		
 		if(event.scancode == KEY_RIGHT or event.scancode == KEY_D):
-			if(((type&1)>>0) == 1):
-				var connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].East)
+			var hasdoor
+			var direction
+			if(Rooms[CurrentRoom].Orientation == 3):
+				hasdoor = (type&1)>>0
+				direction = 0
+			elif(Rooms[CurrentRoom].Orientation == 2):
+				hasdoor = (type&2)>>1
+				direction = 1
+			elif(Rooms[CurrentRoom].Orientation == 1):
+				hasdoor = (type&4)>>2
+				direction = 2
+			else:
+				hasdoor = (type&8)>>3
+				direction = 3
+			if(hasdoor == 1):
+				var connections
+				if(direction == 3):
+					connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].North)
+				elif(direction == 2):
+					connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].West)
+				elif(direction == 1):
+					connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].South)
+				else:
+					connections = Rooms[CurrentRoom].NumConnections(Rooms[CurrentRoom].East)
 				if(connections == 1):
-					var room = Rooms[CurrentRoom]
-					if(true): #if(room.NumConnections(Rooms[room.East[0][0]].West) == 1):
+					var nextRoom
+					var whichdoor
+					if(direction == 3):
+						nextRoom = Rooms[CurrentRoom].North[0][0]
+						whichdoor = Rooms[CurrentRoom].North[0][2]
+					elif(direction == 2):
+						nextRoom = Rooms[CurrentRoom].West[0][0]
+						whichdoor = Rooms[CurrentRoom].West[0][2]
+					elif(direction == 1):
+						nextRoom = Rooms[CurrentRoom].South[0][0]
+						whichdoor = Rooms[CurrentRoom].South[0][2]
+					else:
+						nextRoom = Rooms[CurrentRoom].East[0][0]
+						whichdoor = Rooms[CurrentRoom].East[0][2]
+					if(CurrentRoom != nextRoom):
 						Rooms[CurrentRoom].set_process(false)
-						if(CurrentRoom != Rooms[CurrentRoom].East[0][0]):
-							tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(-RoomSize.x,0),0.5,1,2)
-							CurrentRoom = Rooms[CurrentRoom].East[0][0]
-							Rooms[CurrentRoom].show()
+						tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(-RoomSize.x,0),0.5,1,2)
+						CurrentRoom = nextRoom
+						if(whichdoor == 3):
+							Rooms[CurrentRoom].Orientation = 2
+							Rooms[CurrentRoom].set_rotd(90)
+						elif(whichdoor == 2):
+							Rooms[CurrentRoom].Orientation = 3
+							Rooms[CurrentRoom].set_rotd(0)
+						elif(whichdoor == 1):
+							Rooms[CurrentRoom].Orientation = 0
+							Rooms[CurrentRoom].set_rotd(270)
 						else:
-							CreateDummyRoom(Rooms[CurrentRoom])
-							DummyRoom.set_pos(Vector2(0,0))
-							DummyRoom.show()
-							tween.interpolate_property(DummyRoom,"transform/pos",DummyRoom.get_pos(),Vector2(-RoomSize.x,0),0.5,1,2)
-						Rooms[CurrentRoom].set_pos(Vector2(RoomSize.x,0))
-						tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(0,0),0.5,1,2)
-						MovedEast = true
-						set_process_input(false)
-						tween.start()
+							Rooms[CurrentRoom].Orientation = 1
+							Rooms[CurrentRoom].set_rotd(180)
+						Rooms[CurrentRoom].show()
+					else:
+						CreateDummyRoom(Rooms[CurrentRoom],Rooms[CurrentRoom].Orientation)
+						if(whichdoor == 3):
+							Rooms[CurrentRoom].Orientation = 2
+							Rooms[CurrentRoom].set_rotd(90)
+						elif(whichdoor == 2):
+							Rooms[CurrentRoom].Orientation = 3
+							Rooms[CurrentRoom].set_rotd(0)
+						elif(whichdoor == 1):
+							Rooms[CurrentRoom].Orientation = 0
+							Rooms[CurrentRoom].set_rotd(270)
+						else:
+							Rooms[CurrentRoom].Orientation = 1
+							Rooms[CurrentRoom].set_rotd(180)
+						DummyRoom.set_pos(Vector2(0,0))
+						DummyRoom.show()
+						tween.interpolate_property(DummyRoom,"transform/pos",DummyRoom.get_pos(),Vector2(-RoomSize.x,0),0.5,1,2)
+					Rooms[CurrentRoom].set_pos(Vector2(RoomSize.x,0))
+					tween.interpolate_property(Rooms[CurrentRoom],"transform/pos",Rooms[CurrentRoom].get_pos(),Vector2(0,0),0.5,1,2)
+					MovedEast = true
+					set_process_input(false)
+					tween.start()
 				else:
 					if(connections > 1):
 						impossible.ShowIndex = 0
 						impossible.Count = 0.0
-						for entry in Rooms[CurrentRoom].East:
+						var roomArray
+						if(Rooms[CurrentRoom].Orientation == 3):
+							roomArray = Rooms[CurrentRoom].East
+						elif(Rooms[CurrentRoom].Orientation == 2):
+							roomArray = Rooms[CurrentRoom].South
+						elif(Rooms[CurrentRoom].Orientation == 1):
+							roomArray = Rooms[CurrentRoom].West
+						else:
+							roomArray = Rooms[CurrentRoom].North
+						for entry in roomArray:
 							var roomindex = entry[0]
+							var whichdoor = entry[2]
 							if(roomindex == CurrentRoom):
-								CreateDummyRoom(Rooms[CurrentRoom])
+								if(whichdoor == 3):
+									CreateDummyRoom(Rooms[CurrentRoom],2)
+								elif(whichdoor == 2):
+									CreateDummyRoom(Rooms[CurrentRoom],3)
+								elif(whichdoor == 1):
+									CreateDummyRoom(Rooms[CurrentRoom],0)
+								else:
+									CreateDummyRoom(Rooms[CurrentRoom],1)
 								impossible.RoomCycle.append(DummyRoom)
 								DummyRoom.set_pos(Vector2(RoomSize.x,0))
 							else:
+								if(whichdoor == 3):
+									Rooms[roomindex].Orientation = 2
+									Rooms[roomindex].set_rotd(90)
+								elif(whichdoor == 2):
+									Rooms[roomindex].Orientation = 3
+									Rooms[roomindex].set_rotd(0)
+								elif(whichdoor == 1):
+									Rooms[roomindex].Orientation = 0
+									Rooms[roomindex].set_rotd(270)
+								else:
+									Rooms[roomindex].Orientation = 1
+									Rooms[roomindex].set_rotd(180)
 								impossible.RoomCycle.append(Rooms[roomindex])
 								Rooms[roomindex].set_pos(Vector2(RoomSize.x,0))
 						impossible.set_process(true)
@@ -561,7 +1164,7 @@ func _input(event):
 
 
 
-func CreateDummyRoom(room):
+func CreateDummyRoom(room,orientation):
 	DummyRoom.Type = room.Type
 	DummyRoom.Index = room.Index
 	DummyRoom.North = room.North
@@ -573,6 +1176,15 @@ func CreateDummyRoom(room):
 	DummyRoom.BlockSize = room.BlockSize
 	DummyRoom.BlocksGridSize = room.BlocksGridSize
 	DummyRoom.Rooms = room.Rooms
+	DummyRoom.Orientation = orientation
+	if(orientation == 3):
+		DummyRoom.set_rotd(0)
+	elif(orientation == 2):
+		DummyRoom.set_rotd(90)
+	elif(orientation == 1):
+		DummyRoom.set_rotd(180)
+	else:
+		DummyRoom.set_rotd(270)
 	
 	DummyRoom.BlocksGrid.clear()
 	for x in range(DummyRoom.BlocksGridSize.x):
@@ -596,6 +1208,15 @@ func CreateDummyRoom(room):
 			box.BoundingBox = room.BlocksArray[i][j].BoundingBox
 			box.PresentRoom = room.BlocksArray[i][j].PresentRoom
 			box.Rooms = room.BlocksArray[i][j].Rooms
+			box.Orientation = room.BlocksArray[i][j].Orientation
+			if(box.Orientation == 3):
+				box.set_rotd(0)
+			elif(box.Orientation == 2):
+				box.set_rotd(90)
+			elif(box.Orientation == 1):
+				box.set_rotd(180)
+			else:
+				box.set_rotd(270)
 			box.set_pos(room.BlocksArray[i][j].get_pos())
 			DummyRoom.BlocksArray[i].append(box)
 			DummyRoom.add_child(box)
@@ -603,49 +1224,19 @@ func CreateDummyRoom(room):
 func _on_Tween_tween_complete( object, key ):
 	
 	DummyRoom.hide()
-	if(MovedNorth):
+	if(MovedNorth or MovedWest or MovedSouth or MovedEast):
 		tween.remove_all()
-		if(CurrentRoom != Rooms[CurrentRoom].South[0][0]):
-			var index = Rooms[CurrentRoom].South[0][0]
-			Rooms[index].hide()
+		for i in range(Rooms.size()):
+			if(i != CurrentRoom):
+				Rooms[i].hide()
 			
 		Rooms[CurrentRoom].update()
 		for roomblocks in Rooms[CurrentRoom].BlocksArray:
 			for block in roomblocks:
 				block.update()
 		MovedNorth = false
-		set_process_input(true)
-	if(MovedWest):
-		tween.remove_all()
-		if(CurrentRoom != Rooms[CurrentRoom].East[0][0]):
-			var index = Rooms[CurrentRoom].East[0][0]
-			Rooms[index].hide()
-		Rooms[CurrentRoom].update()
-		for roomblocks in Rooms[CurrentRoom].BlocksArray:
-			for block in roomblocks:
-				block.update()
 		MovedWest = false
-		set_process_input(true)
-	if(MovedSouth):
-		tween.remove_all()
-		if(CurrentRoom != Rooms[CurrentRoom].North[0][0]):
-			var index = Rooms[CurrentRoom].North[0][0]
-			Rooms[index].hide()
-		Rooms[CurrentRoom].set_process(true)
-		for roomblocks in Rooms[CurrentRoom].BlocksArray:
-			for block in roomblocks:
-				block.update()
 		MovedSouth = false
-		set_process_input(true)
-	if(MovedEast):
-		tween.remove_all()
-		if(CurrentRoom != Rooms[CurrentRoom].West[0][0]):
-			var index = Rooms[CurrentRoom].West[0][0]
-			Rooms[index].hide()
-		Rooms[CurrentRoom].update()
-		for roomblocks in Rooms[CurrentRoom].BlocksArray:
-			for block in roomblocks:
-				block.update()
 		MovedEast = false
 		set_process_input(true)
 	
@@ -654,7 +1245,26 @@ func _on_Tween_tween_complete( object, key ):
 		tween2.start()
 		FalseMove = false
 	
+	if(RotatingMove):
+		tween.remove_all()
+		set_process(true)
+		set_process_input(true)
+		Rooms[CurrentRoom].ComputeMiddleBlocks()
+		ComputeEdgeBlocks(CurrentRoom)
+		
+		Rooms[CurrentRoom].update()
+		for roomblocks in Rooms[CurrentRoom].BlocksArray:
+			for block in roomblocks:
+				if(block.get_rotd() >= 360):
+					block.set_rotd(block.get_rotd() - 360)
+				block.set_z(10)
+				block.update()
+		if(PickUpBlock != null):
+			PickUpBlock.set_z(100)
+			if(PickUpBlock.get_rotd() >= 360):
+				PickUpBlock.set_rotd(PickUpBlock.get_rotd() - 360)
 	
+	#TODO(ian): This no longer works!!!!1
 	if(DrosteMove):
 		tween.remove_all()
 		Rooms[CurrentRoom].hide()

@@ -1,6 +1,11 @@
-[gd_scene load_steps=2 format=1]
+[gd_scene load_steps=3 format=1]
 
 [ext_resource path="res://block.gd" type="Script" id=1]
+
+[sub_resource type="RectangleShape2D" id=1]
+
+custom_solver_bias = 0.0
+extents = Vector2( 28, 28 )
 
 [node name="block" type="Node2D"]
 
@@ -9,5 +14,26 @@ RoomIndex = -1
 GridP = Vector2( 0, 0 )
 BoundingBox = Rect2( 0, 0, 0, 0 )
 ColorMod = Vector3( 1, 1, 1 )
+
+[node name="Area2D" type="Area2D" parent="."]
+
+input/pickable = true
+shapes/0/shape = SubResource( 1 )
+shapes/0/transform = Matrix32( 1, 0, 0, 1, 0, 0 )
+shapes/0/trigger = false
+gravity_vec = Vector2( 0, 1 )
+gravity = 98.0
+linear_damp = 0.1
+angular_damp = 1.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+
+shape = SubResource( 1 )
+trigger = false
+_update_shape_index = 0
+
+[connection signal="mouse_enter" from="Area2D" to="." method="_on_Area2D_mouse_enter"]
+
+[connection signal="mouse_exit" from="Area2D" to="." method="_on_Area2D_mouse_exit"]
 
 
