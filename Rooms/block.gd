@@ -176,10 +176,10 @@ func DrawRoomOriented(index,pos,size,color,num,orientation):
 	
 	
 	draw_rect(Rect2(pos,size),color)
-	draw_rect(Rect2(pos,borderdim),bordercolor)
-	draw_rect(Rect2(pos+size-borderdim,borderdim),bordercolor)
-	draw_rect(Rect2(pos.x,pos.y+size.y-borderdim.y,borderdim.x,borderdim.y),bordercolor)
-	draw_rect(Rect2(pos.x+size.x-borderdim.x,pos.y,borderdim.x,borderdim.y),bordercolor)
+	#draw_rect(Rect2(pos,borderdim),bordercolor)
+	#draw_rect(Rect2(pos+size-borderdim,borderdim),bordercolor)
+	#draw_rect(Rect2(pos.x,pos.y+size.y-borderdim.y,borderdim.x,borderdim.y),bordercolor)
+	#draw_rect(Rect2(pos.x+size.x-borderdim.x,pos.y,borderdim.x,borderdim.y),bordercolor)
 	
 	
 	var linegirth = borderdim
@@ -343,17 +343,17 @@ func DrawRoomOriented(index,pos,size,color,num,orientation):
 		draw_line(pos+Vector2(0,size.y),pos+size,Color(0,0,0))
 		
 		
-		for roomblocks in Rooms[index].BlocksArray:
-			for block in roomblocks:
-				var bpos = Vector2()
-				bpos.x = block.GridP.x*borderdim.x + pos.x
-				bpos.y = block.GridP.y*borderdim.y + pos.y
-				var markcolor
-				markcolor = Rooms[block.RoomIndex].RoomColor
-				markcolor.r *= 0.9
-				markcolor.g *= 0.9
-				markcolor.b *= 0.9
-				DrawRoomOriented(block.RoomIndex,bpos,borderdim,markcolor,num-1,block.Orientation)
+		#for roomblocks in Rooms[index].BlocksArray:
+		#	for block in roomblocks:
+		#		var bpos = Vector2()
+		#		bpos.x = block.GridP.x*borderdim.x + pos.x
+		#		bpos.y = block.GridP.y*borderdim.y + pos.y
+		#		var markcolor
+		#		markcolor = Rooms[block.RoomIndex].RoomColor
+		#		markcolor.r *= 0.9
+		#		markcolor.g *= 0.9
+		#		markcolor.b *= 0.9
+		#		DrawRoomOriented(block.RoomIndex,bpos,borderdim,markcolor,num-1,block.Orientation)
 
 func _on_Area2D_mouse_enter():
 	MouseOver = true

@@ -21,9 +21,6 @@ func _ready():
 func _input(event):
 	if(event.type == InputEvent.KEY):
 		if(event.scancode == KEY_ESCAPE):
-			for i in range(Level.Rooms[5].BlocksArray.size()):
-				for block in Level.Rooms[5].BlocksArray[i]:
-					print("Orientation for block of Room " + str(i) + " is " + str(block.get_rotd()))
 			if(not AtMenu):
 				Level.hide()
 				Level.set_process(false)

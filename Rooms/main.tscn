@@ -31,7 +31,7 @@ margin/bottom = -60.0
 toggle_mode = false
 enabled_focus_mode = 2
 shortcut = null
-text = "New Game"
+text = "Restart (1 set)"
 flat = false
 
 [node name="New Game(2 sets)" type="Button" parent="."]
@@ -40,14 +40,14 @@ focus/ignore_mouse = false
 focus/stop_mouse = true
 size_flags/horizontal = 2
 size_flags/vertical = 2
-margin/left = -67.0
+margin/left = -66.0
 margin/top = -42.0
-margin/right = 62.0
+margin/right = 63.0
 margin/bottom = -22.0
 toggle_mode = false
 enabled_focus_mode = 2
 shortcut = null
-text = "New Game++"
+text = "Restart (2 sets)"
 flat = false
 
 [node name="Exit" type="Button" parent="."]
@@ -56,9 +56,9 @@ focus/ignore_mouse = false
 focus/stop_mouse = true
 size_flags/horizontal = 2
 size_flags/vertical = 2
-margin/left = -64.0
+margin/left = -66.0
 margin/top = -4.0
-margin/right = 65.0
+margin/right = 63.0
 margin/bottom = 16.0
 toggle_mode = false
 enabled_focus_mode = 2

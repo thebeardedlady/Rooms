@@ -12,10 +12,12 @@ var PickUpBlock = null
 var RoomSize = Vector2(512,512)
 var BlocksGridSize = Vector2(9,9)
 var FalseMove = false
-var DrosteMove = false
 var RotatingMove = false
+var DrosteMove = false
 var DrosteRoom = -1
 var DrosteBox = Rect2()
+var DrosteBlock = null
+var DrosteOrient = 3
 var GeneratingString = ""
 var Count = 0.0
 export var CurrentRoom = 1
@@ -50,32 +52,36 @@ func _ready():
 		var string = "8,3"
 		string += "_"
 		string += "_"
+		string += "1;"
+		string += "3,2,2,3/6,3,2,3/"
+		string += "9,2,3,3/12,3,3,3"
+		string += "?"
 		string += "2;"
-		string += "10,2,2,3"
+		string += "0,2,2,3/15,6,2,3"
 		string += "?"
 		string += "5;"
-		string += "1,2,2,3/7,3,2,3/6,4,2,3/"
-		string += "3,2,3,3/15,3,3,3/13,4,3,3/4,5,3,3/"
-		string += "11,2,4,3/14,3,4,3/0,4,4,3/2,6,4,3/"
-		string += "8,2,5,3/9,3,5,3/5,4,5,3/12,5,5,3"
+		string += "2,4,2,3/10,4,3,3/"
+		string += "1,2,4,3/7,3,4,3/14,4,4,3/"
+		string += "11,3,5,3/13,4,5,3/5,5,5,3/4,6,5,3/"
+		string += "8,3,6,3"
 		GeneratingString = string
 	if(GeneratingString == "2"):
 		#NOTE(ian): default set-up for Level Two
+		
 		var string = "8,3"
 		string += "_"
 		string += "_"
 		string += "2;"
-		string += "10,2,2,3/10,4,2,3"
+		string += "7,6,4,3/7,7,3,3/10,1,1,3/10,2,2,3/"
+		string += "1,5,1,3/1,3,1,3/14,6,6,3/14,7,5,3/"
+		string += "3,6,2,3/3,7,1,3/15,4,4,3/15,4,2,3/"
+		string += "4,3,3,3/4,5,3,3/12,2,4,3/12,1,3,3/"
+		string += "13,3,5,3/13,5,5,3/11,1,5,3/11,2,6,3/0,4,6,3/"
 		string += "?"
 		string += "5;"
-		string += "1,0,2,3/7,1,2,3/6,2,2,3/"
-		string += "3,0,3,3/15,1,3,3/13,2,3,3/4,3,3,3/"
-		string += "11,0,4,3/14,1,4,3/0,2,4,3/2,3,4,3/"
-		string += "8,0,5,3/9,1,5,3/5,2,5,3/12,3,6,3/"
-		string += "1,4,2,3/7,5,2,3/6,6,2,3/"
-		string += "3,4,3,3/15,5,3,3/13,6,3,3/4,7,3,3/"
-		string += "11,4,4,3/14,5,4,3/0,6,4,3/2,7,4,3/"
-		string += "8,4,5,3/9,5,5,3/5,6,5,3/12,7,6,3"
+		string += "5,3,3,3/5,5,3,3/6,6,3,3/6,5,6,3/"
+		string += "8,6,4,3/8,5,7,3/9,2,3,3/9,3,6,3/"
+		string += "2,2,2,3/2,3,5,3/0,4,6,3/"
 		GeneratingString = string
 	
 	
@@ -369,7 +375,6 @@ func ComplexMult(a,b):
 
 
 func DropBlock():
-	print(str(PickUpBlock.GridP))
 	var BlockSize = Rooms[CurrentRoom].BlockSize
 	PickUpBlock.ColorMod = Vector3(1,1,1)
 	remove_child(PickUpBlock)
@@ -451,14 +456,6 @@ func DropBlock():
 		Rooms[CurrentRoom].ComputeMiddleBlocks()
 		ComputeEdgeBlocks(CurrentRoom)
 		Rooms[CurrentRoom].add_child(PickUpBlock)
-		#if(Rooms[CurrentRoom].Orientation == 3):
-		#	PickUpBlock.set_pos(PickUpBlock.get_pos())
-		#elif(Rooms[CurrentRoom].Orientation == 2):
-		#	PickUpBlock.set_pos(ComplexMult(PickUpBlock.get_pos(),Vector2(0,1)))
-		#elif(Rooms[CurrentRoom].Orientation == 1):
-		#	PickUpBlock.set_pos(ComplexMult(PickUpBlock.get_pos(),Vector2(-1,0)))
-		#else:
-		#	PickUpBlock.set_pos(ComplexMult(PickUpBlock.get_pos(),Vector2(0,-1)))
 		#get_node("sfx").play("box")
 	else:
 		var index = -1
@@ -542,14 +539,6 @@ func DropBlock():
 		Rooms[PickUpRoom].ComputeMiddleBlocks()
 		ComputeEdgeBlocks(PickUpRoom)
 		Rooms[PickUpRoom].add_child(PickUpBlock)
-		#if(Rooms[PickUpRoom].Orientation == 3):
-		#	PickUpBlock.set_pos(PickUpBlock.get_pos())
-		#elif(Rooms[PickUpRoom].Orientation == 2):
-		#	PickUpBlock.set_pos(ComplexMult(PickUpBlock.get_pos(),Vector2(0,-1)))
-		#elif(Rooms[PickUpRoom].Orientation == 1):
-		#	PickUpBlock.set_pos(ComplexMult(PickUpBlock.get_pos(),Vector2(-1,0)))
-		#else:
-		#	PickUpBlock.set_pos(ComplexMult(PickUpBlock.get_pos(),Vector2(0,1)))
 	PickUp = false
 	PickUpBlock = null
 	
@@ -597,37 +586,71 @@ func SaveGame(path):
 
 func _input(event):
 	if(event.type == InputEvent.KEY and event.is_pressed()):
-		
-		#if(event.scancode == KEY_S):
-		#	SaveGame()
-		
 		#TODO(ian): This doesn't work anymore!!!!!
-		if(event.scancode == KEY_SPACE):# and Count > 0.0):
+		if(event.scancode == KEY_SPACE and Count > 0.0):
 			
 			for roomblocks in Rooms[CurrentRoom].BlocksArray:
 				for block in roomblocks:
-					if(block.BoundingBox.has_point(get_global_mouse_pos())):
+					if(block.MouseOver):
 						DrosteMove = true
 						DrosteRoom = block.RoomIndex
+						if(Rooms[CurrentRoom].Orientation == 3):
+							DrosteOrient = block.Orientation
+						elif(Rooms[CurrentRoom].Orientation == 2):
+							if(block.Orientation == 3):
+								DrosteOrient = 2
+							elif(block.Orientation == 2):
+								DrosteOrient = 1
+							elif(block.Orientation == 1):
+								DrosteOrient = 0
+							else:
+								DrosteOrient = 3
+						elif(Rooms[CurrentRoom].Orientation == 1):
+							if(block.Orientation == 3):
+								DrosteOrient = 1
+							elif(block.Orientation == 2):
+								DrosteOrient = 0
+							elif(block.Orientation == 1):
+								DrosteOrient = 3
+							else:
+								DrosteOrient = 2
+						else:
+							if(block.Orientation == 3):
+								DrosteOrient = 0
+							elif(block.Orientation == 2):
+								DrosteOrient = 3
+							elif(block.Orientation == 1):
+								DrosteOrient = 2
+							else:
+								DrosteOrient = 1
 						DrosteBox = block.BoundingBox
+						DrosteBlock = block
 			
 			if(DrosteMove):
 				var zoom = Vector2()
 				zoom.x = DrosteBox.size.x/get_viewport_rect().size.x
 				zoom.y = DrosteBox.size.y/get_viewport_rect().size.y
+				var CameraPos = DrosteBlock.get_pos()
+				if(Rooms[CurrentRoom].Orientation == 3):
+					pass
+				elif(Rooms[CurrentRoom].Orientation == 2):
+					CameraPos = ComplexMult(CameraPos, Vector2(0,-1))
+				elif(Rooms[CurrentRoom].Orientation == 1):
+					CameraPos = ComplexMult(CameraPos, Vector2(-1,0))
+				else:
+					CameraPos = ComplexMult(CameraPos, Vector2(0,1))
 				
-				
-				tween.interpolate_property(CurrentCamera,"transform/pos",CurrentCamera.get_pos(),DrosteBox.pos,10.0,0,3) #1.0,1,2
-				tween.interpolate_property(CurrentCamera,"zoom",CurrentCamera.get_zoom(),zoom,10.0,0,3)
+				tween.interpolate_property(CurrentCamera,"transform/pos",CurrentCamera.get_pos(),CameraPos,1.0,0,3) #1.0,1,2
+				tween.interpolate_property(CurrentCamera,"zoom",CurrentCamera.get_zoom(),zoom,1.0,0,3)
 				if(PickUp):
 					var BlockSize = Rooms[CurrentRoom].BlockSize
-					var pos = DrosteBox.pos
+					var pos = DrosteBlock.get_pos()
 					var shift = Vector2()
 					shift.x = BlockSize.x/BlocksGridSize.x
 					shift.y = BlockSize.y/BlocksGridSize.y
-					pos.x += PickUpBlock.GridP.x*shift.x
-					pos.y += PickUpBlock.GridP.y*shift.y
-					shift *= 0.25
+					pos.x += (PickUpBlock.GridP.x - ((BlocksGridSize.x - 1) * 0.5))*shift.x
+					pos.y += (PickUpBlock.GridP.y - ((BlocksGridSize.y - 1) * 0.5))*shift.y
+					#shift *= 0.25
 					pos -= shift
 					var scale = Vector2(1,1)
 					scale.x /= BlocksGridSize.x
@@ -1272,6 +1295,8 @@ func _on_Tween_tween_complete( object, key ):
 		Rooms[CurrentRoom].show()
 		Rooms[CurrentRoom].set_pos(Vector2(0,0))
 		Rooms[CurrentRoom].update()
+		Rooms[CurrentRoom].Orientation = DrosteOrient
+		Rooms[CurrentRoom].set_rotd((3-DrosteOrient) * 90)
 		for roomblocks in Rooms[CurrentRoom].BlocksArray:
 			for block in roomblocks:
 				block.update()
@@ -1291,6 +1316,8 @@ func _on_Tween_tween_complete( object, key ):
 			PickUpBlock.set_pos(pos)
 		DrosteMove = false
 		DrosteRoom = -1
+		DrosteOrient = 3
+		DrosteBlock = null
 
 
 func _on_Tween2_tween_complete( object, key ):
