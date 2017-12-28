@@ -1,6 +1,8 @@
 extends Node2D
 
 var Rooms = []
+var Music = 1
+var ColorScheme = 1
 var MovedNorth = false
 var MovedWest = false
 var MovedSouth = false
@@ -27,29 +29,19 @@ onready var impossible = get_node("impossible")
 onready var tween = get_node("Tween")
 onready var tween2 = get_node("Tween2")
 onready var main = get_node("../")
+var ColorsOne = ["e5eccb","9b98f6","520929","86ac26","e5a719","395afa","fc9ddf","274c4f","e26aa9","867a44","40691d","cd422d","5c6f83","dbdc61","523671","fda12b"]
+var ColorsTwo = ["a4ddab","400325","4f3f2f","206771","449256","3f3f4f","a19758","cbc486","a77a4c","2f3f3f","8a9625","004e52","d0f16f","726346","6e6c5b","6750f0"]
+var ColorsThree = ["1b61db","bbb556","fb670d","702005","7db49d","faa88f","374b32","ffc32c","5b1b5c","ae280f","7d8633","afd3d5","dbae1d","0b3e0f","2d6f3f","6851f1"]
 
 
 func _ready():
 	RoomSize.x = get_viewport_rect().size.x
-	RoomSize.y = RoomSize.x
-	#var texts = ["a4ddab","408365","4f3f2f","206771","449256","3f3f4f","a19758","cbc486","a77a4c","2f3f3f","8a9625","004e52","d0f16f","726346","6e6c5b","6750f0"]
-	var texts = ["e5eccb","bb4876","520929","86ac26","e5a719","395aba","fc9ddf","274c4f","e26aa9","867a44","40691d","cd422d","5c6f83","dbdc61","523671","fda12b"]
-	#var texts = ["1b61db","0b5556","fb670d","762305","7db49d","faa88f","374b32","ffc32c","5b1b5c","ae280f","7d8633","afd3d5","dbae1d","8b3e0f","2d6f3f","6851f1"]
-	var colors = ColorArray()
-	for text in texts:
-		colors.append(Color(text))
-	var room = load("res://room.tscn")
-	for i in range(16):
-		Rooms.append(room.instance())
-		Rooms[i].RoomColor = colors[i]
-		Rooms[i].Type = i
-		Rooms[i].Index = i
-		add_child(Rooms[i])
-		Rooms[i].hide()
+	RoomSize.y = get_viewport_rect().size.y
+	
 	
 	if(GeneratingString == "1"):
 		#NOTE(ian): default set-up for Level One
-		var string = "8,3"
+		var string = "8,3," + str(ColorScheme) + "," + str(Music)
 		string += "_"
 		string += "_"
 		string += "1;"
@@ -68,7 +60,7 @@ func _ready():
 	if(GeneratingString == "2"):
 		#NOTE(ian): default set-up for Level Two
 		
-		var string = "8,3"
+		var string = "8,3," + str(ColorScheme) + "," + str(Music)
 		string += "_"
 		string += "_"
 		string += "2;"
@@ -88,7 +80,40 @@ func _ready():
 	var fileparts = GeneratingString.split("_",true)
 	var header = fileparts[0].split(",",false)
 	CurrentRoom = header[0].to_int()
+	
+	
+	ColorScheme = header[2].to_int()
+	var texts
+	if(ColorScheme == 1):
+		texts = ColorsOne
+	elif(ColorScheme == 2):
+		texts = ColorsTwo
+	elif(ColorScheme == 3):
+		texts = ColorsThree
+	
+	var colors = ColorArray()
+	for text in texts:
+		colors.append(Color(text))
+	var room = load("res://room.tscn")
+	for i in range(16):
+		Rooms.append(room.instance())
+		Rooms[i].RoomColor = colors[i]
+		Rooms[i].Type = i
+		Rooms[i].Index = i
+		add_child(Rooms[i])
+		Rooms[i].hide()
+	
+	
 	Rooms[CurrentRoom].Orientation = header[1].to_int()
+	Music = header[3].to_int()
+	if(Music == 0):
+		main.get_node("music").stop()
+		main.get_node("Music Button").set_text("Music: off")
+	else:
+		if(not main.get_node("music").is_playing()):
+			main.get_node("music").play()
+		main.get_node("Music Button").set_text("Music: on")
+	
 	if(Rooms[CurrentRoom].Orientation == 3):
 		Rooms[CurrentRoom].set_rotd(0)
 	elif(Rooms[CurrentRoom].Orientation == 2):
@@ -553,7 +578,7 @@ func SaveGame(path):
 	if(PickUp):
 		#TODO(ian): Depending on how DropBlock() changes this may need to be revised
 		DropBlock()
-	var savedata = str(CurrentRoom) + "," +  str(Rooms[CurrentRoom].Orientation) + "_"
+	var savedata = str(CurrentRoom) + "," +  str(Rooms[CurrentRoom].Orientation) + "," + str(ColorScheme) + "," + str(Music) + "_"
 	var roomdata = ""
 	for room in Rooms:
 		roomdata += str(room.North.size()) + ","
@@ -650,16 +675,14 @@ func _input(event):
 					shift.y = BlockSize.y/BlocksGridSize.y
 					pos.x += (PickUpBlock.GridP.x - ((BlocksGridSize.x - 1) * 0.5))*shift.x
 					pos.y += (PickUpBlock.GridP.y - ((BlocksGridSize.y - 1) * 0.5))*shift.y
-					#shift *= 0.25
-					pos -= shift
 					var scale = Vector2(1,1)
 					scale.x /= BlocksGridSize.x
 					scale.y /= BlocksGridSize.y
 					scale.x *= 1.5
 					scale.y *= 1.5
 					PickUpBlock.ColorMod = Vector3(1,1,1)
-					tween.interpolate_property(PickUpBlock,"transform/scale",PickUpBlock.get_scale(),scale,1.0,1,2)
-					tween.interpolate_property(PickUpBlock,"transform/pos",PickUpBlock.get_pos(),pos,1.0,1,2)
+					tween.interpolate_property(PickUpBlock,"transform/scale",PickUpBlock.get_scale(),scale,1.0,0,3)
+					tween.interpolate_property(PickUpBlock,"transform/pos",PickUpBlock.get_pos(),pos,1.0,0,3)
 				set_process(false)
 				set_process_input(false)
 				for roomblocks in Rooms[CurrentRoom].BlocksArray:
@@ -795,6 +818,8 @@ func _input(event):
 								impossible.RoomCycle.append(Rooms[roomindex])
 								Rooms[roomindex].set_pos(Vector2(0,-RoomSize.y))
 						impossible.set_process(true)
+					if(PickUp):
+						DropBlock()
 					tween.interpolate_property(CurrentCamera,"transform/pos",CurrentCamera.get_pos(),Vector2(0,-RoomSize.y*0.5),0.25,0,0)
 					set_process_input(false)
 					set_process(false)
@@ -923,6 +948,8 @@ func _input(event):
 								impossible.RoomCycle.append(Rooms[roomindex])
 								Rooms[roomindex].set_pos(Vector2(-RoomSize.x,0))
 						impossible.set_process(true)
+					if(PickUp):
+						DropBlock()
 					tween.interpolate_property(CurrentCamera,"transform/pos",CurrentCamera.get_pos(),Vector2(-RoomSize.x*0.5,0),0.25,0,0)
 					set_process_input(false)
 					set_process(false)
@@ -1051,6 +1078,8 @@ func _input(event):
 								impossible.RoomCycle.append(Rooms[roomindex])
 								Rooms[roomindex].set_pos(Vector2(0,RoomSize.y))
 						impossible.set_process(true)
+					if(PickUp):
+						DropBlock()
 					tween.interpolate_property(CurrentCamera,"transform/pos",CurrentCamera.get_pos(),Vector2(0,RoomSize.y*0.5),0.25,0,0)
 					set_process_input(false)
 					set_process(false)
@@ -1179,6 +1208,8 @@ func _input(event):
 								impossible.RoomCycle.append(Rooms[roomindex])
 								Rooms[roomindex].set_pos(Vector2(RoomSize.x,0))
 						impossible.set_process(true)
+					if(PickUp):
+						DropBlock()
 					tween.interpolate_property(CurrentCamera,"transform/pos",CurrentCamera.get_pos(),Vector2(RoomSize.x*0.5,0),0.25,0,0)
 					set_process_input(false)
 					set_process(false)
